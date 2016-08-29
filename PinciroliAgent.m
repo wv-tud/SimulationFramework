@@ -24,11 +24,11 @@ classdef PinciroliAgent < Agent
             e       = 0.01;
             eps     = 0.1;
             q_i     = obj.pos(obj.arena.t,:) - obj.arena.c_pos(obj.arena.t,:);                 % Vector of current position and c
-            if isa(obj.g_fun,'function_handle')
+            if isa(obj.g_fun2,'function_handle')
                 if norm(q_i(1:2)) >= obj.g_cond
                     g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering
                 else
-                    g_i     = feval(obj.g_fun2,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering2 
+                    g_i     = feval(obj.g_fun2,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering2
                 end
             else
                 g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering 

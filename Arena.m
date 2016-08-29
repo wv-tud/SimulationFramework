@@ -8,6 +8,7 @@ classdef Arena < handle
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
         nAgents      = 5;               % Number of agents to be spawned
+        swarmMode    = 2;               % 1= look where you go, 2= look towards global
         init         = 'random';        % initialisation procedure ['random','rect','square']
         size         = [10 10];         % Size of spawn arena [x y][m]
         c_fun        = @(t) [0 0 10];   % Centre point function

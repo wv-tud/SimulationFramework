@@ -5,16 +5,16 @@ classdef Agent < handle
     properties
         % Agent properties
         collision_range     = 0.3;                  % Collision_range [m]
-        v_max               = 1;                    % Max v in m/s
+        v_max               = 2;                    % Max v in m/s
         th_max              = 200/360*2*pi();       % Max theta in rad/s
         t_mem               = 20;                   % Memory [timesteps]
         yaw_acc             = 0.95;                 % Accuracy of yaw
         v_acc               = 0.95;                 % Accuracy of v_d implementation
         % Camera properties
         cam_dir             = [0 -10/360*2*pi()];   % Camera direction [radian yaw, radian pitch]
-        cam_fov             = 175/360*2*pi();       % Camera FOV [radian]
-        cam_range           = 3;                    % Camera range [m]
-        cam_acc             = 0.90;                 % Accuracy of Camera   
+        cam_fov             = 152/360*2*pi();       % Camera FOV [radian]
+        cam_range           = 4;                    % Camera range [m]
+        cam_acc             = 0.85;                 % Accuracy of Camera   
         % Non-optional properties
         neighbours          = {};                   % Structure to save neighbours
         u_d_decom           = {};                   % Structure to save decomposed v_d into seperate signals
@@ -49,8 +49,13 @@ classdef Agent < handle
             v_d_ideal                       = obj.scalableShapeFormation();                             % Determine v_d
             [v_d,v_d_n,theta_change]        = obj.agentDynamics(v_d_ideal);                             % Apply agent dynamics to desired velocity
             v_dhat                          = v_d/v_d_n;                                                % Normalised v_d
-            theta                           = atan2(v_dhat(2),v_dhat(1));                               % Yaw angle of v_d
-            phi                             = atan2(v_dhat(3),v_d_n);                                   % Pitch angle of v_d
+            if obj.arena.swarmMode == 1
+                theta                           = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
+                phi                             = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
+            else
+                theta                           = atan2(obj.u_d_decom.g(obj.arena.t,2),obj.u_d_decom.g(obj.arena.t,1));                           % Yaw angle of v_d
+                phi                             = atan2(obj.u_d_decom.g(obj.arena.t,3),0); 
+            end
             v_d_prev                        = (obj.pos(obj.arena.t,:)-obj.pos(max(1,obj.arena.t-1),:)); % Calculate dV
             v_noise_range                   = [obj.v_acc (2-obj.v_acc)].*sqrt(sum((v_d-v_d_prev).^2));  % Range of v noise
             v_noise                         = (rand(1,3)-0.5).*(v_noise_range(2)-v_noise_range(1));     % Generate v noise
@@ -99,18 +104,23 @@ classdef Agent < handle
             heading_vec = [1 0 0]*obj.arena.rotMat(-obj.heading(obj.arena.t,1));    % Vector in the direction of the heading 
             angles      = atan2(cross(heading_vec,v_dhat),dot(heading_vec,v_dhat)); % Determine the smallest angle between heading and v_dhat
             theta       = angles(3);                                                % Yaw angle
-            
-            swing_angle = obj.arena.dt*0.75*(pi()-obj.cam_fov)*cos(2*pi()/2*obj.arena.t*obj.arena.dt + obj.id/obj.arena.nAgents*2*pi())*2*pi()/2;   % Calculate swing angle
-            v_d         = v_d*obj.arena.rotMat(swing_angle);                                                                                        % Rotate v_d with swing angle
-            
-            if abs(theta) > max_yaw_t                                               % See if yaw anlgle > max yaw
-                angle_v         = (0.5*obj.cam_fov-max_yaw_t)/2;                    % Find middle between max yaw and edge of FOV
-                v_d_n           = v_max_t*(1-1./(1+exp(-14*(abs(theta)-(0.5*obj.cam_fov-angle_v)))));                       % Use smooth step to decrease norm(v_d) as angle gets larger than max yaw, middle of decrease is angle_v, update speed norm
-                v_d             = v_d_n * [1 0 0] * obj.arena.rotMat(-obj.heading(obj.arena.t,1)-sign(theta)*max_yaw_t);    % Calculate new v_d using speed limit and yaw limit             
-                theta           = (theta/abs(theta))*max_yaw_t;     % Update heading change
-            elseif v_d_n > v_max_t
-                v_d_n   = v_max_t;          % Update speed norm
-                v_d     = v_d_n*v_dhat;     % Update desired velocity
+            if obj.arena.swarmMode == 1
+                swing_angle = obj.arena.dt*0.75*(pi()-obj.cam_fov)*cos(2*pi()/2*obj.arena.t*obj.arena.dt + obj.id/obj.arena.nAgents*2*pi())*2*pi()/2;   % Calculate swing angle
+                v_d         = v_d*obj.arena.rotMat(swing_angle);
+                if abs(theta) > max_yaw_t                                               % See if yaw anlgle > max yaw
+                    angle_v         = (0.5*obj.cam_fov-max_yaw_t)/2;                    % Find middle between max yaw and edge of FOV
+                    v_d_n           = v_max_t*(1-1./(1+exp(-14*(abs(theta)-(0.5*obj.cam_fov-angle_v)))));                       % Use smooth step to decrease norm(v_d) as angle gets larger than max yaw, middle of decrease is angle_v, update speed norm
+                    v_d             = v_d_n * [1 0 0] * obj.arena.rotMat(-obj.heading(obj.arena.t,1)-sign(theta)*max_yaw_t);    % Calculate new v_d using speed limit and yaw limit
+                    theta           = (theta/abs(theta))*max_yaw_t;     % Update heading change
+                elseif v_d_n > v_max_t
+                    v_d_n   = v_max_t;          % Update speed norm
+                    v_d     = v_d_n*v_dhat;     % Update desired velocity
+                end
+            else
+                if v_d_n > v_max_t
+                    v_d_n   = v_max_t;          % Update speed norm
+                    v_d     = v_d_n*v_dhat;     % Update desired velocity
+                end
             end
         end
         

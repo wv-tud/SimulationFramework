@@ -10,11 +10,11 @@ tm                      = zeros(length(names),1);
 for i=1:length(names)  
     % Simulation options
     uArena{i}               = Mission(num2str(i),names{i},add_args{i});
-    uArena{i}.T             = 200;
+    uArena{i}.T             = 30;
     uArena{i}.dt            = 1/15;
-    uArena{i}.nAgents       = 4;
+    uArena{i}.nAgents       = 8;
     uArena{i}.init          = 'square';
-    uArena{i}.size          = [8 8];
+    uArena{i}.size          = [4 4];
     uArena{i}.agent_conf    = struct('v_max',v_max);
     % Save/Display options
     uArena{i}.print         = 5;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
@@ -34,7 +34,7 @@ for j=1:length(names)
     visObj              = visualArena(uArena{j});
     % Figure options
     visObj.showFig      = 1;  % Show = 3x faster
-    visObj.p_fov        = 0;
+    visObj.p_fov        = 2;
     visObj.p_circ       = 0;
     visObj.p_head       = 2; 
     visObj.p_label      = 0;
