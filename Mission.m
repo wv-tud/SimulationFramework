@@ -29,6 +29,13 @@ classdef Mission < Arena
         
         function initMission(obj,varargin)
             switch(obj.mission_type)
+                 case 'cyberzoo'
+                    tmp_agent       = PinciroliAgent(obj,0,[0 0 0],[0 0]);      % Create tmp agent to read properties
+                    tmp_agent       = obj.mergeStruct(tmp_agent,obj.agent_conf);
+                    obj.agent_conf  = struct(   'g_fun', @(varargin) [cosd(90*obj.agent_conf.g_cond/norm(varargin{2}(1:2)))*varargin{2}(1)-sind(90*obj.agent_conf.g_cond/norm(varargin{2}(1:2)))*varargin{2}(1) sind(90*obj.agent_conf.g_cond/norm(varargin{2}(1:2)))*varargin{2}(1)+cosd(90*obj.agent_conf.g_cond/norm(varargin{2}(1:2)))*varargin{2}(2) 0], ...
+                                                'g_fun2', @(varargin)[cosd((90 + 90 * (obj.agent_conf.g_cond - norm(varargin{2}(1:2)))/obj.agent_conf.g_cond))*varargin{2}(1)-sind((90 + 90 * (obj.agent_conf.g_cond - norm(varargin{2}(1:2)))/obj.agent_conf.g_cond))*varargin{2}(1) sind((90 + 90 * (obj.agent_conf.g_cond - norm(varargin{2}(1:2)))/obj.agent_conf.g_cond))*varargin{2}(1)+cosd((90 + 90 * (obj.agent_conf.g_cond - norm(varargin{2}(1:2)))/obj.agent_conf.g_cond))*varargin{2}(2) 0], ...
+                                                'g_cond', 1.5);
+                    clear tmp_agent;
                 case 'lineTracking'
                     %obj.p_axe_lim   = [-52.5 52.5 -34 34];                  % Set field to football field
                     %obj.p_mov_axe   = 0;                                    % No moving axes

@@ -6,6 +6,8 @@ classdef PinciroliAgent < Agent
         % Pinciroli properties
         seperation_range    = 1;                    % Ideal seperation between agents
         g_fun               = [];                   % Function handle for global pinciroli attractor  
+        g_fun2              = [];                   % Second function handle for conditional functions
+        g_cond              = 0;                    % Condition for second function handle
     end
     
     methods
@@ -22,8 +24,16 @@ classdef PinciroliAgent < Agent
             e       = 0.01;
             eps     = 0.1;
             q_i     = obj.pos(obj.arena.t,:) - obj.arena.c_pos(obj.arena.t,:);                 % Vector of current position and c
-            g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering 
-            L_i     = [0 0 0];                                                  % Lattice formation
+            if isa(obj.g_fun,'function_handle')
+                if norm(q_i(1:2)) >= obj.g_cond
+                    g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering
+                else
+                    g_i     = feval(obj.g_fun2,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering2 
+                end
+            else
+                g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering 
+            end
+             L_i     = [0 0 0];                                                  % Lattice formation
             d_i     = [0 0 0];                                                  % Dissipative energy
             if ~isempty(obj.neighbours{obj.arena.t})
                 for j=1:size(obj.neighbours{obj.arena.t},1)

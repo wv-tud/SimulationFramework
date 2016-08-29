@@ -50,7 +50,7 @@ classdef visualArena < handle
                 file_clear  = 0;
                 version     = 1;
                 while file_clear == 0 % Rename to -v1.1,v1.2,...,v1.N when file v1 exists
-                    if exist(strcat(['./movies_' obj.diskType '/' name '.mp4']), 'file') == 2
+                    if exist(strcat(['./movies_' obj.diskType '/' name '.avi']), 'file') == 2
                         version = version + 1;
                         i       = 1;
                         foundV  = 0;
@@ -66,8 +66,8 @@ classdef visualArena < handle
                         file_clear = 1;
                     end
                 end
-                obj.moviefile       = strcat('./movies_',obj.diskType,'/',name,'.mp4');
-                obj.movie           = VideoWriter(obj.moviefile,'MPEG-4');
+                obj.moviefile       = strcat('./movies_',obj.diskType,'/',name,'.avi');
+                obj.movie           = VideoWriter(obj.moviefile,'Motion JPEG AVI');
                 obj.movie.Quality   = 75;
                 obj.movie.FrameRate = 1/arena.dt;
                 open(obj.movie);

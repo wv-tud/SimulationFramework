@@ -1,20 +1,7 @@
-close all hidden;
-clear uArena;
-%names                   = {'waypoint' 'ellipseTracking' 'lineTracking' 'swirl' 'waypoint' 'ellipseTracking' 'lineTracking' 'swirl'};
-%add_args                 = {[0 0 10 0; 0 0 10 30; 0 30 10 70; -50 -30 10 105; 50 -30 10 140; 0 30 10 105; 0 0 10 70; 0 0 10 30] 1 0 0 [0 0 10 0; 0 0 10 30; 0 30 10 70; -50 -30 10 105; 50 -30 10 140; 0 30 10 105; 0 0 10 70; 0 0 10 30] 1 0 0};
-names                   = {'waypoint'};
-add_args                = {[0 0 10 0; 0 0 10 60]};
+close all hidden; clear uArena;
+names                   = {'cyberzoo'};
+add_args                = {0};
 v_max                   = 4;
-% Create parpool of desired size
-% poolobj = gcp('nocreate');
-% if isempty(poolobj)
-%     poolobj = parpool(min(length(names),8));  
-% else
-%     if poolobj.NumWorkers > length(names)
-%         delete(poolobj);
-%         poolobj = parpool(min(length(names),8));
-%     end
-% end
 uArena{length(names)}   = {};
 simT{length(names)}     = {};
 movT{length(names)}     = {};
@@ -24,10 +11,10 @@ for i=1:length(names)
     % Simulation options
     uArena{i}               = Mission(num2str(i),names{i},add_args{i});
     uArena{i}.T             = 200;
-    uArena{i}.dt            = 0.1;
-    uArena{i}.nAgents       = 200;
-    uArena{i}.init          = 'random';
-    uArena{i}.size          = [50 50];
+    uArena{i}.dt            = 1/15;
+    uArena{i}.nAgents       = 4;
+    uArena{i}.init          = 'square';
+    uArena{i}.size          = [8 8];
     uArena{i}.agent_conf    = struct('v_max',v_max);
     % Save/Display options
     uArena{i}.print         = 5;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
@@ -38,9 +25,6 @@ for i=1:length(names)
     fprintf(strcat(['Simulation ' num2str(i) ' took ' uArena{i}.sec2time(round(t(i))) 's at ' num2str(round(uArena{i}.T/t(i),2)) 'x speed\n']));
 end
 clear i simT;
-%delete(gcp('nocreate'));
-% uArena{1}.agents{1}.plotVelocityComponents();
-% uArena{1}.agents{1}.plotGlobalAttraction(uArena{1}.p_axe_lim(1):0.3:uArena{1}.p_axe_lim(2),uArena{1}.p_axe_lim(3):0.3:uArena{1}.p_axe_lim(4),uArena{1}.c_fun(0));
 for j=1:length(names)
     if uArena{j}.save == 1
         tmp = uArena{j}; %#ok
@@ -55,7 +39,7 @@ for j=1:length(names)
     visObj.p_head       = 2; 
     visObj.p_label      = 0;
     visObj.p_mov_axe    = 0;
-    visObj.p_axe_lim    = [-52.5 52.5 -34 34];  % Soccer field
+    visObj.p_axe_lim    = [-4 4 -4 4];  % Cyberzoo
     fprintf(strcat(['VisualArena ' num2str(j) ': Initialised videoWriter\n'])); 
     movT{j} = tic; visObj.build(); tm(j) = toc(movT{j});
     fprintf(strcat(['VisualArena ' num2str(j) ' took ' uArena{j}.sec2time(round(tm(j))) 's at ' num2str(round(uArena{j}.T/tm(j),2)) 'x speed\n']));
