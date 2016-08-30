@@ -19,8 +19,8 @@ for u=1:length(uArena)
             neighbours = zeros(size(uArena{u}.agents{a}.neighbours{t},1),4);
             for n=1:size(uArena{u}.agents{a}.neighbours{t},1)
                 neighbours(n,3:4)   = uArena{u}.agents{a}.neighbours{t}(n,3:4) - uArena{u}.agents{a}.pos(t+1,1:2);
-                neighbours(n,1)     = uArena{u}.agents{a}.collision_range / norm(neighbours(n,3:4));
-                neighbours(n,2)     = (atan2(neighbours(n,4),neighbours(n,3)) + pi())/(2*pi());
+                neighbours(n,1)     = max(0,min(1,uArena{u}.agents{a}.collision_range / norm(neighbours(n,3:4))));
+                neighbours(n,2)     = max(0,min(1,(atan2(neighbours(n,4),neighbours(n,3)) + pi())/(2*pi())));
             end
             neighbours = sort(neighbours,1,'descend');
             if size(neighbours,1)>MAX_NEIGHBOURS
