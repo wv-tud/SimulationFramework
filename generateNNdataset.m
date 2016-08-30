@@ -1,5 +1,5 @@
 MAX_NEIGHBOURS = 5;
-
+maxV = 8; % m/s
 sampleSize = 0;
 for u=1:length(uArena)
     sampleSize = sampleSize + length(uArena{u}.agents) * (length(uArena{u}.agents{1}.pos(:,1))-1);
@@ -30,7 +30,7 @@ for u=1:length(uArena)
             input(i,1:(2*size(neighbours,1))) =  reshape(neighbours(:,1:2)',1,numel(neighbours(:,1:2)));
             % X + Y
             %input(end+1,1:(2*size(neighbours,1))) =  reshape(neighbours(:,3:4)',1,numel(neighbours(:,3:4)));
-            output(i,:) = [norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/uArena{1}.agents{1}.v_max (atan2(uArena{u}.agents{a}.u_d_decom.L(t,2),uArena{u}.agents{a}.u_d_decom.L(t,1)) + pi())/(2*pi())];
+            output(i,:) = [max(-1,min(1,norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/(maxV)))/2+0.5 (atan2(uArena{u}.agents{a}.u_d_decom.L(t,2),uArena{u}.agents{a}.u_d_decom.L(t,1)) + pi())/(2*pi())];
             % Show progress
             if print > 0 && print < 1
                 t_el        = toc(iterT);                       % Get elapsed time
