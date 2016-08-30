@@ -39,7 +39,7 @@ classdef Arena < handle
             % Start simulation
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
-            t_ar    = zeros(obj.T/obj.dt);      % Array containing timestep calculation time
+            t_ar    = zeros(obj.T/obj.dt,1);      % Array containing timestep calculation time
             pos     = zeros(obj.nAgents,3);     % Array containing positions for plot
             head    = zeros(obj.nAgents,2);     % Array containing headings for plot
             nT      = obj.T/obj.dt;             % Number of timestep iterations

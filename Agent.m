@@ -6,13 +6,13 @@ classdef Agent < handle
         % Agent properties
         collision_range     = 0.3;                  % Collision_range [m]
         v_max               = 2;                    % Max v in m/s
-        th_max              = 200/360*2*pi();       % Max theta in rad/s
+        th_max              = 200/180*pi();       % Max theta in rad/s
         t_mem               = 20;                   % Memory [timesteps]
         yaw_acc             = 0.95;                 % Accuracy of yaw
         v_acc               = 0.95;                 % Accuracy of v_d implementation
         % Camera properties
-        cam_dir             = [0 -10/360*2*pi()];   % Camera direction [radian yaw, radian pitch]
-        cam_fov             = 152/360*2*pi();       % Camera FOV [radian]
+        cam_dir             = [0 -10/180*pi()];   % Camera direction [radian yaw, radian pitch]
+        cam_fov             = 152/180*pi();       % Camera FOV [radian]
         cam_range           = 4;                    % Camera range [m]
         cam_acc             = 0.85;                 % Accuracy of Camera   
         % Non-optional properties
