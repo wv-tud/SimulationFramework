@@ -52,7 +52,7 @@ for u=1:length(uArena)
                 perc        = i/sampleSize;                     % Get iteration percentage
                 ETA         = round(t_avg*(1-perc)*100);        % Calculate time remaining
                 text        = strcat(['Dataset: ' char(repmat('*',1,round(perc*20))) char(repmat('.',1,20-round(perc*20))) ' ' num2str(round(perc*100)) '%% (' sec2time(ETA) ')\n']);
-                if i>1
+                if p>1
                     fprintf(char(repmat('\b',1,prev_l-2)));
                 end
                 fprintf (text);
