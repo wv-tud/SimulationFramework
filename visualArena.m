@@ -39,6 +39,7 @@ classdef visualArena < handle
             obj.arenaVars.cam_fov           = arena.agents{1}.cam_fov;
             obj.arenaVars.collision_range   = arena.agents{1}.collision_range;
             obj.arenaVars.nAgents           = arena.nAgents;
+            obj.arenaVars.agents            = arena.agents;
             obj.arenaVars.c_pos             = arena.c_pos;
             obj.arenaVars.collisions        = arena.collisions;
             obj.arenaVars.a_headings        = arena.a_headings;
@@ -137,7 +138,7 @@ classdef visualArena < handle
                 cla(obj.axes);                                       % Empty axes
                 % Plot shapes
                 hold on;
-                obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', agentColor, 'LineStyle', '-', 'LineWidth',1);
+                obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', 'black', 'LineStyle', '-', 'LineWidth',1);
                 if obj.p_circ==1
                     obj.fh_circles = viscircles(pos(:,1:2), 0.5*ones(obj.arenaVars.nAgents,1)+0.5*obj.arenaVars.collision_range, 'Color', 'black', 'LineStyle', '--', 'LineWidth',1);
                 end
@@ -200,7 +201,7 @@ classdef visualArena < handle
                         obj.fh_head(i).XData = [pos(i,1) (pos(i,1)+cx)];
                         obj.fh_head(i).YData = [pos(i,2) (pos(i,2)+cy)];
                     end
-                     if isa(obj.agents{i},'neuralnetAgent') && obj.p_head>0
+                     if isa(obj.arenaVars.agents{i},'neuralnetAgent') && obj.p_head>0
                         obj.fh_head(i).Color = 'blue';
                     end
                     if obj.p_fov==1
