@@ -46,7 +46,8 @@ classdef Agent < handle
         
         function obj = Update(obj,neighbours)
             obj.neighbours{obj.arena.t}     = obj.buildNeighbourMatrix(neighbours);                     % Using detected neighbours build the matrix
-            v_d_ideal                       = obj.scalableShapeFormation();                             % Determine v_d
+            
+            v_d_ideal                       = obj.calculate_vd();                                       % Determine v_d
             [v_d,v_d_n,theta_change]        = obj.agentDynamics(v_d_ideal);                             % Apply agent dynamics to desired velocity
             v_dhat                          = v_d/v_d_n;                                                % Normalised v_d
             if obj.arena.swarmMode == 1

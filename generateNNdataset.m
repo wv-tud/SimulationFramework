@@ -18,9 +18,11 @@ for u=1:length(uArena)
             i = i + 1;
             neighbours = zeros(size(uArena{u}.agents{a}.neighbours{t},1),4);
             for n=1:size(uArena{u}.agents{a}.neighbours{t},1)
-                neighbours(n,3:4)   = uArena{u}.agents{a}.neighbours{t}(n,3:4) - uArena{u}.agents{a}.pos(t+1,1:2);
+                neighbours(n,3:4)   = uArena{u}.agents{a}.neighbours{t}(n,3:4) - uArena{u}.agents{a}.pos(t,1:2);
                 neighbours(n,1)     = max(0,min(1,uArena{u}.agents{a}.collision_range / norm(neighbours(n,3:4))));
-                neighbours(n,2)     = max(0,min(1,(atan2(neighbours(n,4),neighbours(n,3)) + pi())/(2*pi())));
+                heading_vec         = [1 0 0]*uArena{u}.rotMat(-uArena{u}.agents{a}.heading(t,1));    % Vector in the direction of the current agent heading
+                relAngle            = atan2(cross(heading_vec,[neighbours(n,3:4) 0]/norm([neighbours(n,3:4) 0])),dot(heading_vec,[neighbours(n,3:4) 0]/norm([neighbours(n,3:4) 0])));
+                neighbours(n,2)     = max(0,min(1,(relAngle(3) + pi())/(2*pi())));
             end
             neighbours = sort(neighbours,1,'descend');
             if size(neighbours,1)>MAX_NEIGHBOURS
@@ -30,7 +32,12 @@ for u=1:length(uArena)
             input(i,1:(2*size(neighbours,1))) =  reshape(neighbours(:,1:2)',1,numel(neighbours(:,1:2)));
             % X + Y
             %input(end+1,1:(2*size(neighbours,1))) =  reshape(neighbours(:,3:4)',1,numel(neighbours(:,3:4)));
-            output(i,:) = [max(-1,min(1,norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/(maxV)))/2+0.5 (atan2(uArena{u}.agents{a}.u_d_decom.L(t,2),uArena{u}.agents{a}.u_d_decom.L(t,1)) + pi())/(2*pi())];
+            heading_vec         = [-1 0 0]*uArena{u}.rotMat(-uArena{u}.agents{a}.heading(t,1));    % Vector in the direction of the current agent heading
+            relVangle           = atan2(cross(heading_vec,[uArena{u}.agents{a}.u_d_decom.L(t,1:2) 0]/norm([uArena{u}.agents{a}.u_d_decom.L(t,1:2) 0])),dot(heading_vec,[uArena{u}.agents{a}.u_d_decom.L(t,1:2) 0]/norm([uArena{u}.agents{a}.u_d_decom.L(t,1:2) 0])));
+            if isnan(relVangle(3)) % L = [0 0 0] -> no neighbours
+                relVangle(3) = 0;
+            end
+            output(i,:)         = [max(-1,min(1,norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/(maxV)))/2+0.5 (relVangle(3) + pi())/(2*pi())];
             % Show progress
             if print > 0 && print < 1
                 t_el        = toc(iterT);                       % Get elapsed time

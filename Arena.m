@@ -8,6 +8,7 @@ classdef Arena < handle
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
         nAgents      = 5;               % Number of agents to be spawned
+        nnAgents     = 0;               % Number of NN agents of agents to be spawned
         swarmMode    = 2;               % 1= look where you go, 2= look towards global
         init         = 'random';        % initialisation procedure ['random','rect','square']
         size         = [10 10];         % Size of spawn arena [x y][m]
@@ -104,7 +105,11 @@ classdef Arena < handle
                 pos     = pos(1:newAgents,:);
                 head    = unifrnd(0,2*pi(),newAgents,1);
             end
-            for i=1:newAgents
+            for i=1:obj.nnAgents
+                obj.agents{cAgents+i} = neuralnetAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
+            end
+            for i=(obj.nnAgents+1):newAgents;
                 obj.agents{cAgents+i} = PinciroliAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end

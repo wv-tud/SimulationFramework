@@ -19,6 +19,10 @@ classdef PinciroliAgent < Agent
             end
         end
         
+        function v_d = calculate_vd(obj)
+            v_d = obj.scalableShapeFormation();
+        end
+        
         function v_d = scalableShapeFormation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
             e       = 0.01;

@@ -137,7 +137,7 @@ classdef visualArena < handle
                 cla(obj.axes);                                       % Empty axes
                 % Plot shapes
                 hold on;
-                obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', 'black', 'LineStyle', '-', 'LineWidth',1);
+                obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', agentColor, 'LineStyle', '-', 'LineWidth',1);
                 if obj.p_circ==1
                     obj.fh_circles = viscircles(pos(:,1:2), 0.5*ones(obj.arenaVars.nAgents,1)+0.5*obj.arenaVars.collision_range, 'Color', 'black', 'LineStyle', '--', 'LineWidth',1);
                 end
@@ -186,7 +186,6 @@ classdef visualArena < handle
                     aStart = ((i-1)*ppA_d+1):((i-1)*ppA_d+ppA_d);
                     obj.fh_drone.Children(1).XData(aStart) = obj.fh_drone.Children(1).XData(aStart) + (pos(i,1) - mean(obj.fh_drone.Children(1).XData(aStart(1:end-1))));
                     obj.fh_drone.Children(1).YData(aStart) = obj.fh_drone.Children(1).YData(aStart) + (pos(i,2) - mean(obj.fh_drone.Children(1).YData(aStart(1:end-1))));
-                    
                     if obj.p_circ==1
                         aStart  = ((i-1)*ppA_c+1):((i-1)*ppA_c+ppA_c);
                         obj.fh_circles.Children(1).XData(aStart) = obj.fh_circles.Children(1).XData(aStart) + (pos(i,1) - mean(obj.fh_circles.Children(1).XData(aStart(1:end-1))));
@@ -200,6 +199,9 @@ classdef visualArena < handle
                         [cx,cy,~] = sph2cart(head(i,1)+obj.arenaVars.cam_dir(1),0,0.5*obj.arenaVars.collision_range);
                         obj.fh_head(i).XData = [pos(i,1) (pos(i,1)+cx)];
                         obj.fh_head(i).YData = [pos(i,2) (pos(i,2)+cy)];
+                    end
+                     if isa(obj.agents{i},'neuralnetAgent') && obj.p_head>0
+                        obj.fh_head(i).Color = 'blue';
                     end
                     if obj.p_fov==1
                         [lx,ly,~] = sph2cart(head(i,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,0,obj.arenaVars.cam_range);

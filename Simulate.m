@@ -13,6 +13,7 @@ for i=1:length(names)
     uArena{i}.T             = 30;
     uArena{i}.dt            = 1/15;
     uArena{i}.nAgents       = 8;
+    uArena{i}.nnAgents      = 2;
     uArena{i}.init          = 'square';
     uArena{i}.size          = [4 4];
     uArena{i}.agent_conf    = struct('v_max',v_max);
