@@ -152,13 +152,13 @@ classdef visualArena < handle
                 if obj.p_fov==1
                     [lx,ly,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);
                     [rx,ry,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)+0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);
-                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','b--');
-                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','g--');
+                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','m--');
+                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','m--');
                 elseif obj.p_fov==2
                     [lx,ly,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range);
                     [rx,ry,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)+0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range);
-                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','b--');
-                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','g--');
+                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','m--');
+                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','m--');
                 end
                 if obj.p_label==1
                     labels = cellstr(int2str((1:obj.arenaVars.nAgents)'));
@@ -201,9 +201,6 @@ classdef visualArena < handle
                         obj.fh_head(i).XData = [pos(i,1) (pos(i,1)+cx)];
                         obj.fh_head(i).YData = [pos(i,2) (pos(i,2)+cy)];
                     end
-                     if isa(obj.arenaVars.agents{i},'neuralnetAgent') && obj.p_head>0
-                        obj.fh_head(i).Color = 'blue';
-                    end
                     if obj.p_fov==1
                         [lx,ly,~] = sph2cart(head(i,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,0,obj.arenaVars.cam_range);
                         [rx,ry,~] = sph2cart(head(i,1)+obj.arenaVars.cam_dir(1)+0.5*obj.arenaVars.cam_fov,0,obj.arenaVars.cam_range);
@@ -218,6 +215,15 @@ classdef visualArena < handle
                         obj.fh_fovL(i).YData = [pos(i,2) (pos(i,2)+ly)];
                         obj.fh_fovR(i).XData = [pos(i,1) (pos(i,1)+rx)];
                         obj.fh_fovR(i).YData = [pos(i,2) (pos(i,2)+ry)];
+                    end
+                    if isa(obj.arenaVars.agents{i},'neuralnetAgent')
+                        if obj.p_head>0
+                            obj.fh_head(i).Color = 'blue';
+                        end
+                        if obj.p_fov>0
+                            obj.fh_fovL(i).Color = 'cyan';
+                            obj.fh_fovR(i).Color = 'cyan';
+                        end
                     end
                     if obj.p_label==1
                         obj.fh_label(i).Position(1:2) = [pos(i,1) pos(i,2)];
