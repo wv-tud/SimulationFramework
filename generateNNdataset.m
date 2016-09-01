@@ -37,7 +37,7 @@ for u=1:length(uArena)
             if isnan(relVangle(3)) % L = [0 0 0] -> no neighbours
                 relVangle(3) = 0;
             end
-            output(i,:)         = [max(-1,min(1,norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/(maxV)))/2+0.5 (relVangle(3) + pi())/(2*pi())];
+            output(i,:)         = [max(0,min(1,norm(uArena{u}.agents{a}.u_d_decom.L(t,1:2))/(maxV))) (relVangle(3) + pi())/(2*pi())];
             % Show progress
             if print > 0 && print < 1
                 t_el        = toc(iterT);                       % Get elapsed time
