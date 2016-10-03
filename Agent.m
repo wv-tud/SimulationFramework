@@ -206,8 +206,8 @@ classdef Agent < handle
             w = reshape(g_i(:,3),length(y_arr),length(x_arr))./vNorm;
             F = figure(3);
             hold on;
-            surf(x_arr,y_arr,vNorm,'EdgeColor','none','LineStyle','none');
-            quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end),vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
+            surf(x_arr,y_arr, 1/obj.arena.dt * vNorm,'EdgeColor','none','LineStyle','none');
+            quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), 1/obj.arena.dt * vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
             hold off;
             axis equal tight;
             h = colorbar();

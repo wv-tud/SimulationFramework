@@ -84,6 +84,7 @@ classdef visualArena < handle
             obj.fig_table{1}    = figureTable(0,700,obj.resolution,{'\eta_{v}','\eta_{\Psi}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(100*arena.agents{1}.v_acc) '%']),strcat([num2str(100*arena.agents{1}.yaw_acc) '%']),strcat([num2str(100*arena.agents{1}.cam_acc) '%']),arena.agents{1}.cam_range,rad2deg(arena.agents{1}.cam_fov),rad2deg(arena.agents{1}.th_max),arena.agents{1}.v_max,arena.agents{1}.seperation_range,arena.dt,arena.T,arena.nAgents});
             obj.fig_table{2}    = figureTable(0,550,obj.resolution,{'collisions' 't'},{'0' '0.0'});
             obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-200))/obj.resolution(1) 0.90]);
+            axis square;
             set(obj.fig,'PaperPositionMode','manual');
             set(obj.fig,'PaperPosition',[100 100 obj.resolution(1) obj.resolution(2)]);
             set(obj.fig,'Renderer','opengl','DockControls','off','MenuBar','none','ToolBar','none','Resize','off','InvertHardcopy','off');

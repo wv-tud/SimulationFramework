@@ -10,7 +10,7 @@ if ~exist('simTime','var')
     simTime = 60;
 end
 if ~exist('simAgents','var')
-    simTime = 8;
+    simAgents = 8;
 end
 for i=1:length(names)  
     % Simulation options
@@ -19,7 +19,7 @@ for i=1:length(names)
     uArena{i}.dt            = 1/15;
     uArena{i}.nAgents       = simAgents;
     uArena{i}.nnAgents      = netAgents;
-    uArena{i}.init          = 'square';
+    uArena{i}.init          = 'random';
     uArena{i}.size          = [4 4];
     uArena{i}.agent_conf    = struct('v_max',v_max);
     % Save/Display options

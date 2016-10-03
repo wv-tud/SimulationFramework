@@ -54,7 +54,7 @@ classdef Mission < Arena
                 case 'cyberzooBucket'
                     tmp_agent       = PinciroliAgent(obj,0,[0 0 0],[0 0]);      % Create tmp agent to read properties
                     tmp_agent       = obj.mergeStruct(tmp_agent,obj.agent_conf);
-                    obj.agent_conf  = struct(   'g_fun', @(varargin) (1 - 1 / (1 + exp(4 / 1.75 * (norm(-varargin{2}(1:2)) - 1.75)))) * varargin{3} / norm(-varargin{2}(1:2)) * [-varargin{2}(1) -varargin{2}(2) 0], 'seperation_range', 1.75);
+                    obj.agent_conf  = struct(   'g_fun', @(varargin) (1 - 1 / (1 + exp(4 / 1.75 * (norm(-varargin{2}(1:2)) - 1.75)))) * varargin{3} / norm(-varargin{2}(1:2)) * [-varargin{2}(1) -varargin{2}(2) 0], 'seperation_range', 1.3);
                     clear tmp_agent;
                 case 'lineTracking'
                     %obj.p_axe_lim   = [-52.5 52.5 -34 34];                  % Set field to football field
