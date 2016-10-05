@@ -17,7 +17,7 @@ if ~exist('simTime','var')
     simTime = 900;
 end
 if ~exist('simAgents','var')
-    simTime = 8;
+    simAgents = 8;
 end
 if ~exist('netAgents','var')
     netAgents = 0;

@@ -5,7 +5,7 @@ classdef Agent < handle
     properties
         % Agent properties
         collision_range     = 0.3;                  % Collision_range [m]
-        v_max               = 2;                    % Max v in m/s
+        v_max               = 1;                    % Max v in m/s
         th_max              = 200/180*pi();       % Max theta in rad/s
         t_mem               = 20;                   % Memory [timesteps]
         yaw_acc             = 0.95;                 % Accuracy of yaw
@@ -23,7 +23,11 @@ classdef Agent < handle
         noise_neighbour     = [];                   % Camera noise
         pos                 = [];                   % Matrix containing positions (t,[x y z])
         heading             = [];                   % Matrix containing headings (t,[yaw pitch])
+        vel                 = [];
+        genome              = [];
         collisions          = 0;                    % Matrix containing collisions (t,id)
+        vel_cost            = 0;
+        dist_cost           = 0;
         arena;                                      % Arena object passing property
         id;                                         % UID of agent
     end
@@ -35,9 +39,11 @@ classdef Agent < handle
             % Used to initialize the Agent and create matrices
             nT                  = obj.arena.T/obj.arena.dt+1;
             obj.pos             = zeros(nT,3);
+            obj.vel             = zeros(nT,3);
             obj.heading         = zeros(nT,2);
             obj.collisions      = zeros(nT,1);
             obj.pos(1,:)        = pos;
+            obj.vel(1,:)        = [0 0 0];
             obj.heading(1,:)    = head;
             obj.noise_v         = zeros(nT,3);
             obj.noise_th        = zeros(nT,1);
@@ -46,10 +52,11 @@ classdef Agent < handle
         
         function obj = Update(obj,neighbours)
             obj.neighbours{obj.arena.t}     = obj.buildNeighbourMatrix(neighbours);                     % Using detected neighbours build the matrix
-            
-            v_d_ideal                       = obj.calculate_vd();                                       % Determine v_d
-            [v_d,v_d_n,theta_change]        = obj.agentDynamics(v_d_ideal);                             % Apply agent dynamics to desired velocity
-            v_dhat                          = v_d/v_d_n;                                                % Normalised v_d
+            v_d_ideal                       = obj.calculate_vd(); 
+            [v_d,v_d_n,theta_change]        = obj.agentDynamics(v_d_ideal);% Determine v_d
+            v_d                             = obj.indiGuidance(v_d);
+            obj.vel_cost                    = obj.vel_cost + log(norm(v_d - obj.u_d_decom.g(obj.arena.t,:))+1);                             % Apply agent dynamics to desired velocity
+            v_dhat                          = v_d/v_d_n;
             if obj.arena.swarmMode == 1
                 theta                           = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
                 phi                             = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
@@ -123,6 +130,37 @@ classdef Agent < handle
                     v_d     = v_d_n*v_dhat;     % Update desired velocity
                 end
             end
+        end
+        
+        function pos_update = indiGuidance(obj, sp)
+            guidance_indi_pos_gain = 0.5;
+            guidance_indi_speed_gain = 1.8;
+            indiRuns = round(1/obj.arena.dt);
+            pos_update = zeros(1,3);
+            %tmpVel = zeros(1,3);
+            tmpVel = obj.vel(max(obj.arena.t-1,1),:);
+            for i=1:indiRuns
+                pos_x_err = sp(1) - pos_update(1);
+                pos_y_err = sp(2) - pos_update(2);
+                %pos_z_err = sp(3) - pos_update(3);
+                
+                speed_sp_x = pos_x_err * guidance_indi_pos_gain;
+                speed_sp_y = pos_y_err * guidance_indi_pos_gain;
+                %speed_sp_z = pos_z_err * guidance_indi_pos_gain;
+                
+                sp_accel_x = (speed_sp_x - tmpVel(1)) * guidance_indi_speed_gain;
+                sp_accel_y = (speed_sp_y - tmpVel(2)) * guidance_indi_speed_gain;
+                %sp_accel_z = (speed_sp_z - tmpVel(3)) * guidance_indi_speed_gain;
+                
+                sp_accel_x = min(1,max(-1,(sp_accel_x)));
+                sp_accel_y = min(1,max(-1,(sp_accel_y)));
+                
+                tmpVel(1) = tmpVel(1) + obj.arena.dt * 1/indiRuns * sp_accel_x;
+                tmpVel(2) = tmpVel(2) + obj.arena.dt * 1/indiRuns * sp_accel_y;
+                %tmpVel = tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
+                pos_update = pos_update + tmpVel;
+            end
+            obj.vel(obj.arena.t,:) = tmpVel;
         end
         
         function plotVelocityComponents(obj)

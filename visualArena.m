@@ -34,10 +34,17 @@ classdef visualArena < handle
     
     methods
         function obj = visualArena(arena)
+            obj.arenaVars.name              = arena.name;
             obj.arenaVars.cam_range         = arena.agents{1}.cam_range;          % Save parameters to local
             obj.arenaVars.cam_dir           = arena.agents{1}.cam_dir;
             obj.arenaVars.cam_fov           = arena.agents{1}.cam_fov;
             obj.arenaVars.collision_range   = arena.agents{1}.collision_range;
+            obj.arenaVars.v_acc             = arena.agents{1}.v_acc;
+            obj.arenaVars.yaw_acc           = arena.agents{1}.yaw_acc;
+            obj.arenaVars.cam_acc           = arena.agents{1}.cam_acc;
+            obj.arenaVars.th_max            = arena.agents{1}.th_max;
+            obj.arenaVars.v_max            = arena.agents{1}.v_max;
+            obj.arenaVars.seperation_range  = arena.agents{1}.seperation_range;
             obj.arenaVars.nAgents           = arena.nAgents;
             obj.arenaVars.agents            = arena.agents;
             obj.arenaVars.c_pos             = arena.c_pos;
@@ -46,8 +53,13 @@ classdef visualArena < handle
             obj.arenaVars.a_positions       = arena.a_positions;
             obj.arenaVars.dt                = arena.dt;
             obj.arenaVars.T                 = arena.T;
+            
+            
+        end
+        
+        function filename = build(obj)
             if obj.frame_save~=1
-                name        = strcat([arena.name '.1']);
+                name        = strcat([obj.arenaVars.name '.1']);
                 file_clear  = 0;
                 version     = 1;
                 while file_clear == 0 % Rename to -v1.1,v1.2,...,v1.N when file v1 exists
@@ -70,7 +82,7 @@ classdef visualArena < handle
                 obj.moviefile       = strcat('./movies_',obj.diskType,'/',name,'.avi');
                 obj.movie           = VideoWriter(obj.moviefile,'Motion JPEG AVI');
                 obj.movie.Quality   = 75;
-                obj.movie.FrameRate = 1/arena.dt;
+                obj.movie.FrameRate = 1/obj.arenaVars.dt;
                 open(obj.movie);
             end
             % Create figure
@@ -79,23 +91,20 @@ classdef visualArena < handle
                     obj.resolution(1) = obj.resolution(1).*round((obj.p_axe_lim(2)-obj.p_axe_lim(1))/(obj.p_axe_lim(4)-obj.p_axe_lim(3)),3);
                 end
             end
-            obj.resolution(1) = obj.resolution(1) + 200; % Increase figure width to include table
+            obj.resolution(1) = obj.resolution(1) + 250; % Increase figure width to include table
             obj.fig             = figure('Position',[0 0 obj.resolution(1) obj.resolution(2)]);
-            obj.fig_table{1}    = figureTable(0,700,obj.resolution,{'\eta_{v}','\eta_{\Psi}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(100*arena.agents{1}.v_acc) '%']),strcat([num2str(100*arena.agents{1}.yaw_acc) '%']),strcat([num2str(100*arena.agents{1}.cam_acc) '%']),arena.agents{1}.cam_range,rad2deg(arena.agents{1}.cam_fov),rad2deg(arena.agents{1}.th_max),arena.agents{1}.v_max,arena.agents{1}.seperation_range,arena.dt,arena.T,arena.nAgents});
-            obj.fig_table{2}    = figureTable(0,550,obj.resolution,{'collisions' 't'},{'0' '0.0'});
-            obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-200))/obj.resolution(1) 0.90]);
+            obj.fig_table{1}    = figureTable(0,0.6*obj.resolution(2),obj.resolution,{'\eta_{v}','\eta_{\Psi}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(100*obj.arenaVars.v_acc) '%']),strcat([num2str(100*obj.arenaVars.yaw_acc) '%']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
+            obj.fig_table{2}    = figureTable(0,0.6*obj.resolution(2)-150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
+            obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
             axis square;
             set(obj.fig,'PaperPositionMode','manual');
             set(obj.fig,'PaperPosition',[100 100 obj.resolution(1) obj.resolution(2)]);
             set(obj.fig,'Renderer','opengl','DockControls','off','MenuBar','none','ToolBar','none','Resize','off','InvertHardcopy','off');
             xlabel('Position [m]');
             ylabel('Position [m]');
-            title(arena.name);
+            title(obj.arenaVars.name);
             % Preallocate arrays
             obj.fh_collisions{obj.arenaVars.nAgents} = 0;
-        end
-        
-        function filename = build(obj)
             if obj.showFig==0
                 set(obj.fig,'Visible','off'); 
             end

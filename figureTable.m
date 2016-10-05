@@ -20,7 +20,7 @@ classdef figureTable < handle
             obj.position    = [posX posY];
             obj.resolution  = resolution;
             %obj.fig_h   = figure('Position',[0 0 1250 1000]);
-            obj.axes_h  = axes('Position',[((0.9*(obj.resolution(1)-200))/obj.resolution(1)+0.06+25/obj.resolution(1)) 0 1 1],'Visible','off');
+            obj.axes_h  = axes('Position',[((0.9*(obj.resolution(1)-250))/obj.resolution(1)+0.06+25/obj.resolution(1)) 0 1 1],'Visible','off');
             hold on;
             obj.axes_h.XLimMode = 'manual';
             obj.axes_h.YLimMode = 'manual';
