@@ -11,6 +11,7 @@ classdef Arena < handle
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
         polyAgents   = 0;               % Number of poly Agents
+        sinusoidAgents = 0;             % Number of sinusoid Agents
         swarmMode    = 2;               % 1= look where you go, 2= look towards global
         init         = 'random';        % initialisation procedure ['random','rect','square']
         boc          = 0;               % Break simulation on impact    
@@ -117,15 +118,19 @@ classdef Arena < handle
                 pos     = pos(1:newAgents,:);
                 head    = unifrnd(0,2*pi(),newAgents,1);
             end
-            for i=1:obj.polyAgents
+            for i=1:obj.sinusoidAgents
+                obj.agents{cAgents+i} = sinusoidAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
+            end
+            for i=(obj.sinusoidAgents+1):(obj.sinusoidAgents+obj.polyAgents)
                 obj.agents{cAgents+i} = polyAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
-            for i=(obj.polyAgents+1):(obj.polyAgents)+obj.nnAgents
+            for i=(obj.sinusoidAgents+obj.polyAgents+1):(obj.sinusoidAgents+obj.polyAgents+obj.nnAgents)
                 obj.agents{cAgents+i} = neuralnetAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
-            for i=(obj.polyAgents+obj.nnAgents+1):newAgents
+            for i=(obj.polyAgents+obj.sinusoidAgents+obj.nnAgents+obj.nnAgents+1):newAgents
                 obj.agents{cAgents+i} = PinciroliAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end

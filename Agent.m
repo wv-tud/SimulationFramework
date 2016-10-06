@@ -135,7 +135,7 @@ classdef Agent < handle
         function pos_update = indiGuidance(obj, sp)
             guidance_indi_pos_gain = 0.5;
             guidance_indi_speed_gain = 1.8;
-            indiRuns = round(1/obj.arena.dt);
+            indiRuns = round(32*obj.arena.dt);
             pos_update = zeros(1,3);
             %tmpVel = zeros(1,3);
             tmpVel = obj.vel(max(obj.arena.t-1,1),:);

@@ -52,7 +52,7 @@ classdef polyAgent < Agent
                 L_i = obj.arena.dt*L_i/length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
             end
             if obj.arena.t > 1
-                d_i = -eps*(g_i+L_i - (obj.pos(obj.arena.t,:)-obj.pos(obj.arena.t-1,:)));   % Calculate dissipative energy
+                d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.arena.t-1,:)+obj.u_d_decom.L(obj.arena.t-1,:)+obj.u_d_decom.d(obj.arena.t-1,:)));   % Calculate dissipative energy
             end
             u_d = g_i + L_i + d_i;                  % Sum to find u_d
             obj.u_d_decom.g(obj.arena.t,:) = g_i;   % Save to array for plotting

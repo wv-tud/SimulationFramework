@@ -20,7 +20,7 @@ for i=1:length(names)
     uArena{i}.nAgents       = simAgents;
     uArena{i}.nnAgents      = netAgents;
     uArena{i}.init          = 'random';
-    uArena{i}.size          = [4 4];
+    uArena{i}.size          = [8 8];
     uArena{i}.agent_conf    = struct('v_max',v_max);
     % Save/Display options
     uArena{i}.print         = 2;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
