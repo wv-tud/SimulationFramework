@@ -46,7 +46,7 @@ classdef sinusoidAgent < Agent
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
                         for l=1:(length(obj.genome)-1)/3
-                            L_i = L_i + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (sigma/q_ijn) + obj.genome(4+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
+                            L_i = L_i + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (sigma/q_ijn) + 2*pi()*obj.genome(4+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
                         end
                     end
                     obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
