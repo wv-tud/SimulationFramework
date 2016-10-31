@@ -127,8 +127,10 @@ classdef Arena < handle
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             for i=(obj.sinusoidAgents+obj.polyAgents+1):(obj.sinusoidAgents+obj.polyAgents+obj.nnAgents)
-                obj.agents{cAgents+i} = neuralnetAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = simpleNNAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                %obj.agents{cAgents+i} = neuralnetAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
+                obj.agents{cAgents+i}.nnInit();
             end
             for i=(obj.polyAgents+obj.sinusoidAgents+obj.nnAgents+obj.nnAgents+1):newAgents
                 obj.agents{cAgents+i} = PinciroliAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
