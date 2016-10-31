@@ -25,8 +25,8 @@ classdef PinciroliAgent < Agent
         
         function v_d = scalableShapeFormation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
-            e       = 0.01;
-            eps     = 0.1;
+            e       = obj.genome(1);
+            eps     = obj.genome(2);
             q_i     = obj.pos(obj.arena.t,:) - obj.arena.c_pos(obj.arena.t,:);                 % Vector of current position and c
             if isa(obj.g_fun2,'function_handle')
                 if norm(q_i(1:2)) >= obj.g_cond
@@ -44,6 +44,8 @@ classdef PinciroliAgent < Agent
                     q_ij    = q_i-(obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     L_i     = L_i + 12*e/q_ijn*((sigma/q_ijn)^12-(sigma/q_ijn)^6)*[q_ij(1)/q_ijn q_ij(2)/q_ijn 0];  % Calculate Lattice formation
+                    obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
+                
                 end
                 L_i = obj.arena.dt*L_i/length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
             end
@@ -55,6 +57,20 @@ classdef PinciroliAgent < Agent
             obj.u_d_decom.L(obj.arena.t,:) = L_i;   % Save to array for plotting
             obj.u_d_decom.d(obj.arena.t,:) = d_i;   % Save to array for plotting
             v_d = u_d;                              % Convert u_d to v_d
+        end
+        
+        function plotAgentFunction(obj,figid)
+            figure(figid);
+            sigma   = obj.seperation_range + obj.collision_range;
+            x=0:0.01:5;
+            l = zeros(1,length(x));
+            for i=1:length(x)
+                l(i) = 12*0.01/x(i)*((sigma/x(i))^12-(sigma/x(i))^6);
+            end
+            plot(x,l);
+            axis([0 x(end) 0 2*obj.v_max]);
+            xlabel('Distance from agent [m]');
+            ylabel('Polynomial response [m/s]');
         end
     end
     

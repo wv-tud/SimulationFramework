@@ -61,7 +61,7 @@ classdef polyAgent < Agent
             v_d = u_d;                              % Convert u_d to v_d
         end
         
-        function plotPolynomial(obj,figid)
+        function plotAgentFunction(obj,figid)
             figure(figid);
             sigma   = obj.seperation_range + obj.collision_range;
             x=0:0.01:5;

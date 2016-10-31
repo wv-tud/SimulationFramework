@@ -45,8 +45,9 @@ classdef sinusoidAgent < Agent
                     q_ij    = q_i-(obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
+                        L_i = L_i + obj.genome(1);
                         for l=1:(length(obj.genome)-1)/3
-                            L_i = L_i + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (sigma/q_ijn) + 2*pi()*obj.genome(4+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
+                            L_i = L_i + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (q_ijn/sigma) + 2*pi()*obj.genome(4+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
                         end
                     end
                     obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
@@ -63,14 +64,14 @@ classdef sinusoidAgent < Agent
             v_d = u_d;                              % Convert u_d to v_d
         end
         
-        function plotSinusoid(obj,figid)
+        function plotAgentFunction(obj,figid)
             figure(figid);
             sigma   = obj.seperation_range + obj.collision_range;
             x=0:0.01:5;
             l = zeros(1,length(x));
             for i=1:length(x)
                 for s=1:(length(obj.genome)-1)/3
-                    l(i) = l(i) + obj.genome(2+(s-1)*3) * sin(2*pi()*obj.genome(3+(s-1)*3) * (sigma/x(i)) + obj.genome(4+(s-1)*3));
+                    l(i) = l(i) + obj.genome(2+(s-1)*3) * sin(2*pi()*obj.genome(3+(s-1)*3) * (x(i)/sigma) + 2*pi()*obj.genome(4+(s-1)*3));
                 end
             end
             subplot(1,2,1);
