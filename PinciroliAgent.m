@@ -8,6 +8,7 @@ classdef PinciroliAgent < Agent
         g_fun               = [];                   % Function handle for global pinciroli attractor  
         g_fun2              = [];                   % Second function handle for conditional functions
         g_cond              = 0;                    % Condition for second function handle
+        tL                  = 0;
     end
     
     methods
@@ -37,15 +38,21 @@ classdef PinciroliAgent < Agent
             else
                 g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering 
             end
-             L_i     = [0 0 0];                                                  % Lattice formation
+             L_i    = [0 0 0];                                                  % Lattice formation
             d_i     = [0 0 0];                                                  % Dissipative energy
             if ~isempty(obj.neighbours{obj.arena.t})
+                %tLn     = 0;
                 for j=1:size(obj.neighbours{obj.arena.t},1)
                     q_ij    = q_i-(obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
+                    %tLt     = tic;
                     L_i     = L_i + 12*e/q_ijn*((sigma/q_ijn)^12-(sigma/q_ijn)^6)*[q_ij(1)/q_ijn q_ij(2)/q_ijn 0];  % Calculate Lattice formation
+                    %tLn     = tLn + toc(tLt);
+                    obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
                 end
-                L_i = obj.arena.dt*L_i/length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
+                %obj.tL = (obj.tL * (obj.arena.t-1) + toc(tLt)/length(obj.neighbours{obj.arena.t})) / obj.arena.t;
+                %fprintf('%0.10f\n', obj.tL);
+                L_i = L_i / length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
             end
             if obj.arena.t > 1
                 d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.arena.t-1,:)+obj.u_d_decom.L(obj.arena.t-1,:)+obj.u_d_decom.d(obj.arena.t-1,:)));   % Calculate dissipative energy

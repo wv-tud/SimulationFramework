@@ -8,8 +8,7 @@ classdef simpleNNAgent < Agent
         g_fun               = [];                   % Function handle for global pinciroli attractor  
         g_fun2              = [];                   % Second function handle for conditional functions
         g_cond              = 0;                    % Condition for second function handle
-        n                   = 5;
-        net;
+        tL                  = 0;
     end
     
     methods
@@ -19,15 +18,6 @@ classdef simpleNNAgent < Agent
                 a           = obj.v_max*obj.arena.dt/(((obj.arena.nAgents*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
                 obj.g_fun   = @(varargin) min(a*norm(varargin{2}).^2,varargin{3})*varargin{2}./norm(varargin{2}).*[-1 -1 0];
             end
-        end
-        
-        function nnInit(obj)
-             obj.net = feedforwardnet([obj.n]);
-            %obj.net.layers{1}.transferFcn = 'logsig';
-            %obj.net.layers{2}.transferFcn = 'radbas';
-            %obj.net.layers{3}.transferFcn = 'purelin';
-            obj.net = configure(obj.net, [obj.nnNormI(0) obj.nnNormI(obj.cam_range)], [-1 1]);
-            obj.net = setwb(obj.net,obj.genome');
         end
         
         function y = nnNormI(obj,x)
@@ -54,15 +44,24 @@ classdef simpleNNAgent < Agent
             L_i     = [0 0 0];                                                  % Lattice formation
             d_i     = [0 0 0];                                                  % Dissipative energy
             if ~isempty(obj.neighbours{obj.arena.t})
+                %tLn = 0;
+                vL_i    = zeros(size(obj.neighbours{obj.arena.t},1),3);
+                vq_ijn  = zeros(size(obj.neighbours{obj.arena.t},1),1);
                 for j=1:size(obj.neighbours{obj.arena.t},1)
-                    q_ij    = q_i-(obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
+                    q_ij    = q_i - (obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
-                        L_i     = L_i + obj.v_max * obj.net(obj.nnNormI(q_ijn)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
+                        %tLt = tic;
+                        vq_ijn(j) = q_ijn;
+                        vL_i(j,:) = [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
+                        %tLn     = tLn + toc(tLt);
                     end
                     obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
                 end
-                L_i = obj.arena.dt*L_i/length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
+                L_i = sum(obj.v_max .* repmat(obj.arena.net(obj.nnNormI(vq_ijn)'),3,1)' .* vL_i,1);
+                %obj.tL = (obj.tL * (obj.arena.t-1) + toc(tLt)/length(obj.neighbours{obj.arena.t})) / obj.arena.t;
+                %fprintf('%0.10f\n', obj.tL);
+                L_i = L_i / length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
             end
             if obj.arena.t > 1
                 d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.arena.t-1,:)+obj.u_d_decom.L(obj.arena.t-1,:)+obj.u_d_decom.d(obj.arena.t-1,:)));   % Calculate dissipative energy
