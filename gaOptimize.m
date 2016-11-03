@@ -1,8 +1,9 @@
+global agentType;
 simulations = {};
 i = 1;
 % Pinciroli optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 20;
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'pinciroli';          % 0.0000121633
 simulations{i}.LB       = zeros(1,2);
 simulations{i}.UB       = 1 * ones(1,2);
@@ -27,7 +28,7 @@ simulations{i}.popSize  = 25;
 simulations{i}.type     = 'simpleNN';           % 0.0024908491
 simulations{i}.LB       = -1 * ones(1,16);
 simulations{i}.UB       =  1 * ones(1,16);
-%i = i + 1;
+i = i + 1;
 %% Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
@@ -40,14 +41,14 @@ simPar = struct(...
     'sinusoidAgents',       0, ...  % Sinusoid agents
     'circle_radius',        3, ...
     'seperation_range',     1.5, ...
-    'init',                 'square', ...
+    'init',                 'random', ...
     'size',                 [4 4], ...
     'v_max',                2, ...
     'distance_cost',        0.2, ...
     'velocity_cost',        1, ...
     'collision_cost',       1 ...
     );
-simPar.mission = {'cyberzooCW' 'cyberzooCCW' 'cyberzooBucket'};
+simPar.mission = {'cyberzooBucket'};
 %% Run all simulations
 for si = 1:length(simulations)
     switch simulations{si}.type 
@@ -91,7 +92,8 @@ for si = 1:length(simulations)
     simt            = toc(pT);
     fprintf(strcat(['\n\nSimulation ' simPar.type ' took ' num2str(simt) 's - performance: (cost: ' num2str(cost) ')\n\n']));
     %% Run GA
-    options = optimoptions('ga','PopulationSize',simulations{si}.popSize, 'Display','iter', 'PlotFcn',{@gaplotbestf_scale @gaplotbestindiv @gaplotgenealogy},'UseParallel',1);
+    agentType = simPar.type;
+    options = optimoptions('ga','PopulationSize',simulations{si}.popSize, 'Display','iter', 'PlotFcn',{@gaplotbestf_scale @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag) @gaplotgenealogy},'UseParallel',1,'OutputFcn',@outputfun_ga,'CrossoverFraction',0.6);
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
     save(strcat(['ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(end)) '.mat']),'x','fval','exitflag','output','population','scores');

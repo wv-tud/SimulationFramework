@@ -255,5 +255,16 @@ classdef Agent < handle
             zlabel('Velocity [m/s]');
             ylabel(h,'Velocity [m/s]');
         end
+        
+        function X = getAgentFunction(obj,x)
+            X = zeros(size(x));
+            for r=1:length(x)
+                X(r) = obj.local_interaction(x(r)); 
+            end
+        end
+        
+        function y = local_interaction(x)
+            y=0;
+        end
     end  
 end

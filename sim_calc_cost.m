@@ -1,6 +1,7 @@
 function [ totCost ] = sim_calc_cost( simPar, genome )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
+rng('default');
 distanceCost = 0;
 velocityCost = 0;
 collisionCost = 0;

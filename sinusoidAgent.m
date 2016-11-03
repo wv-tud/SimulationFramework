@@ -64,6 +64,14 @@ classdef sinusoidAgent < Agent
             v_d = u_d;                              % Convert u_d to v_d
         end
         
+        function y = local_interaction(obj,x)
+            y = obj.genome(1);
+            sigma   = obj.seperation_range + obj.collision_range;
+            for l=1:(length(obj.genome)-1)/3
+                y = y + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(4+(l-1)*3));
+            end
+        end
+        
         function plotAgentFunction(obj,figid)
             figure(figid);
             sigma   = obj.seperation_range + obj.collision_range;

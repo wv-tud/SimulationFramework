@@ -73,8 +73,8 @@ classdef simpleNNAgent < Agent
             v_d = u_d;                              % Convert u_d to v_d
         end
         
-        function L_i = genomeNN(q)
-            
+        function y = local_interaction(obj,x)
+            y = 0;
         end
     end
     

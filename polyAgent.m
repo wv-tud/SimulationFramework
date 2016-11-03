@@ -61,6 +61,11 @@ classdef polyAgent < Agent
             v_d = u_d;                              % Convert u_d to v_d
         end
         
+        function y = local_interaction(obj,x)
+            sigma   = obj.seperation_range + obj.collision_range;
+            y = 1 / x * sum((sigma/x).^(0:(length(obj.genome)-1)) .* obj.genome);
+        end
+        
         function plotAgentFunction(obj,figid)
             figure(figid);
             sigma   = obj.seperation_range + obj.collision_range;

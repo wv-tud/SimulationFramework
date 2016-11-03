@@ -63,6 +63,11 @@ classdef PinciroliAgent < Agent
             obj.u_d_decom.d(obj.arena.t,:) = d_i;   % Save to array for plotting
             v_d = u_d;                              % Convert u_d to v_d
         end
+        
+        function y = local_interaction(obj,x)
+            sigma   = obj.seperation_range + obj.collision_range;
+            y       = 12*obj.genome(1)/x*((sigma/x)^12-(sigma/x)^6);
+        end
     end
     
 end
