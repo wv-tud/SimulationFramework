@@ -27,7 +27,7 @@ simulations{i}.popSize  = 25;
 simulations{i}.type     = 'simpleNN';           % 0.0024908491
 simulations{i}.LB       = -1 * ones(1,16);
 simulations{i}.UB       =  1 * ones(1,16);
-i = i + 1;
+%i = i + 1;
 %% Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
