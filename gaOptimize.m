@@ -20,6 +20,7 @@ simulations{i}.popSize  = 75;
 simulations{i}.type     = 'sinusoid';
 simulations{i}.LB       = [-1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
 simulations{i}.UB       = [ 1   15 50 1   15 50 1   15 50 1   15 50 1];
+i = i + 1;
 % NN optimization
 simulations{i}          = struct();
 simulations{i}.popSize  = 25;
