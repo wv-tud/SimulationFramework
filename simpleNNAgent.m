@@ -74,7 +74,7 @@ classdef simpleNNAgent < Agent
         end
         
         function y = local_interaction(obj,x)
-            y = 0;
+            y = obj.arena.net(x);
         end
     end
     
