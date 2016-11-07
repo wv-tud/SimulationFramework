@@ -27,7 +27,7 @@ for s=1:simPar.trialSize
     uArena.init                 = simPar.init;
     uArena.size                 = simPar.size;
     if strcmp(simPar.type,'simpleNN')
-        uArena.net              = setwb(simPar.net,genome);
+        uArena.net              = setwb(simPar.net,genome(2:end));
     end
     uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
     % Save/Display options

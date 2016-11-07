@@ -13,11 +13,10 @@ classdef sinusoidAgent < Agent
     methods
         function obj = sinusoidAgent(arena,id,pos,head)
             obj = obj@Agent(arena,id,pos,head);
-            if ~isa(obj.g_fun,'function_handle')
-                a           = obj.v_max*obj.arena.dt/(((obj.arena.nAgents*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
-                obj.g_fun   = @(varargin) min(a*norm(varargin{2}).^2,varargin{3})*varargin{2}./norm(varargin{2}).*[-1 -1 0];
-            end
-            %obj.genome = [0 0 0 0 0 0 -0.12 0 0 0 0 0 0.12];
+%             if ~isa(obj.g_fun,'function_handle')
+%                 a           = obj.v_max*obj.dt/(((obj.swarmSize*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
+%                 obj.g_fun   = @(varargin) min(a*norm(varargin{2}).^2,varargin{3})*varargin{2}./norm(varargin{2}).*[-1 -1 0];
+%             end
         end
         
         function v_d = calculate_vd(obj)
@@ -26,41 +25,40 @@ classdef sinusoidAgent < Agent
         
         function v_d = sinusoidCalculation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
-            e       = 0.01;
-            eps     = 0.05;
-            q_i     = obj.pos(obj.arena.t,:) - obj.arena.c_pos(obj.arena.t,:);                 % Vector of current position and c
-            if isa(obj.g_fun2,'function_handle')
-                if norm(q_i(1:2)) >= obj.g_cond
-                    g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering
-                else
-                    g_i     = feval(obj.g_fun2,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering2
-                end
-            else
-                g_i     = feval(obj.g_fun,obj.arena.t*obj.arena.dt,q_i,obj.v_max*obj.arena.dt);  % Gathering 
-            end
+            eps     = obj.genome(1);
+            q_i     = obj.pos - obj.c_pos;                 % Vector of current position and c
+            g_i     = obj.global_interaction(q_i);
+%             if isa(obj.g_fun2,'function_handle')
+%                 if norm(q_i(1:2)) >= obj.g_cond
+%                     g_i     = feval(obj.g_fun,obj.t*obj.dt,q_i,obj.v_max*obj.dt);  % Gathering
+%                 else
+%                     g_i     = feval(obj.g_fun2,obj.t*obj.dt,q_i,obj.v_max*obj.dt);  % Gathering2
+%                 end
+%             else
+%                 g_i     = feval(obj.g_fun,obj.t*obj.dt,q_i,obj.v_max*obj.dt);  % Gathering 
+%             end
             L_i     = [0 0 0];                                                  % Lattice formation
             d_i     = [0 0 0];                                                  % Dissipative energy
-            if ~isempty(obj.neighbours{obj.arena.t})
-                for j=1:size(obj.neighbours{obj.arena.t},1)
-                    q_ij    = q_i-(obj.neighbours{obj.arena.t}(j,3:5) - obj.arena.c_pos(obj.arena.t,:));                          % Relative vector between agent i and j
+            if ~isempty(obj.neighbours{obj.t})
+                for j=1:size(obj.neighbours{obj.t},1)
+                    q_ij    = q_i-(obj.neighbours{obj.t}(j,3:5) - obj.c_pos);                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
-                        L_i = L_i + obj.genome(1);
-                        for l=1:(length(obj.genome)-1)/3
-                            L_i = L_i + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (q_ijn/sigma) + 2*pi()*obj.genome(4+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
+                        L_i = L_i + obj.genome(2);
+                        for l=1:(length(obj.genome)-2)/3
+                            L_i = L_i + obj.genome(3+(l-1)*3) * sin(2*pi()*obj.genome(4+(l-1)*3) * (q_ijn/sigma) + 2*pi()*obj.genome(5+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
                         end
                     end
-                    obj.dist_cost = obj.dist_cost + abs(sigma./q_ijn - 1) ./ size(obj.neighbours{obj.arena.t},1);
                 end
-                L_i = L_i / length(obj.neighbours{obj.arena.t});     % Average over nr. of agents
+                L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents
             end
-            if obj.arena.t > 1
-                d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.arena.t-1,:)+obj.u_d_decom.L(obj.arena.t-1,:)+obj.u_d_decom.d(obj.arena.t-1,:)));   % Calculate dissipative energy
+            if obj.t > 1
+                d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.t-1,:)+obj.u_d_decom.L(obj.t-1,:)+obj.u_d_decom.d(obj.t-1,:)));   % Calculate dissipative energy
             end
             u_d = g_i + L_i + d_i;                  % Sum to find u_d
-            obj.u_d_decom.g(obj.arena.t,:) = g_i;   % Save to array for plotting
-            obj.u_d_decom.L(obj.arena.t,:) = L_i;   % Save to array for plotting
-            obj.u_d_decom.d(obj.arena.t,:) = d_i;   % Save to array for plotting
+            obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
+            obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
+            obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
             v_d = u_d;                              % Convert u_d to v_d
         end
         

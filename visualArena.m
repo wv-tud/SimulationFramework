@@ -246,12 +246,12 @@ classdef visualArena < handle
             if obj.p_mov_axe == 1
                 axis equal tight;
             end
-            if length(obj.p_axe_lim) == 2;
+            if length(obj.p_axe_lim) == 2
                 limX = xlim;
                 limY = ylim;
                 axis([  min(limX(1),-0.5*obj.p_axe_lim(1)) max(limX(2),0.5*obj.p_axe_lim(1))...
                     min(limY(1),-0.5*obj.p_axe_lim(2)) max(limY(2),0.5*obj.p_axe_lim(2))]);
-            elseif length(obj.p_axe_lim) == 4;
+            elseif length(obj.p_axe_lim) == 4
                 limX = xlim;
                 limY = ylim;
                 axis([  min(limX(1),obj.p_axe_lim(1)) max(limX(2),obj.p_axe_lim(2))...

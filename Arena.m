@@ -26,12 +26,14 @@ classdef Arena < handle
         agents       = {};              % Agent struct
         a_positions  = [];              % Vector containing agents positions
         a_headings   = [];              % Vector containing agents headings
+        a_velocities = [];
         t            = 0;               % current time
         collisions   = 0;               % Counts the colissions
         c_pos;                          % desired swarm centre position
         axes;                           % Axes handle
         simId;                          % Simulation identifier
-        net;                            % Placeholder for simpleNN network
+        circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
+        net          = @(x) 0;          % Placeholder for simpleNN network
     end
     
     methods
@@ -39,6 +41,28 @@ classdef Arena < handle
             % Used to initialize the Arena when new instance is created
             obj.name    = name;
             obj.simId   = name;
+            obj.circle_packing_radius = [ ...
+                1 ...
+                2 ...
+                1+2/3*sqrt(3) ...
+                1+sqrt(2) ...
+                1+sqrt(2*(1+1/sqrt(5))) ...
+                3 ...
+                3 ...
+                (1+1/sin(pi()/7)) ...
+                1+sqrt(2*(2+sqrt(2))) ...
+                3.813 ...
+                1+1/sin(pi()/9) ...
+                4.029 ...
+                2+sqrt(5) ...
+                4.328 ...
+                1+sqrt(6+2/sqrt(5)+4*sqrt(1+2/sqrt(5))) ...
+                4.615 ...
+                4.792 ...
+                1+sqrt(2)+sqrt(6) ...
+                1+sqrt(2)+sqrt(6) ...
+                5.122 ...
+            ];
         end
         
         function Simulate(obj,varargin)
@@ -46,8 +70,6 @@ classdef Arena < handle
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
             t_ar    = zeros(obj.T/obj.dt,1);      % Array containing timestep calculation time
-            pos     = zeros(obj.nAgents,3);     % Array containing positions for plot
-            head    = zeros(obj.nAgents,2);     % Array containing headings for plot
             nT      = obj.T/obj.dt;             % Number of timestep iterations
             if obj.print>0 
                 iterT = tic;  % Start timer for first iteration
@@ -58,14 +80,21 @@ classdef Arena < handle
                 [neighbours,~]      = obj.detectNeighbours(ti);     % Calculate agents in each others FOV cone & save collisions
                 if obj.boc == 1
                     if sum(obj.collisions(ti,:)) > 0
-                        break;
+                        if obj.print==1
+                            fprintf('Collision occured, stopping simulation.\n');
+                        end
+                        return;
                     end
                 end
+                v_d     = zeros(obj.nAgents,3);
+                theta   = zeros(obj.nAgents,1);
+                phi     = zeros(obj.nAgents,1);
                 for i = 1:obj.nAgents
-                    obj.agents{i}               = obj.agents{i}.Update(find(neighbours(i,:)>0));  %#ok<FNDSB>
-                    obj.a_positions(ti+1,i,:)   = obj.agents{i}.pos(ti+1,:);
-                    obj.a_headings(ti+1,i,:)    = obj.agents{i}.heading(ti+1,:);
+                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),squeeze(obj.a_positions(ti,i,:)), squeeze(obj.a_headings(ti,i,:)), squeeze(obj.a_velocities(ti,i,:)), find(neighbours(i,:)>0), squeeze(obj.a_positions(ti,:,:))); %#ok<FNDSB>
                 end
+                v_d                         = obj.indiGuidance(v_d);
+                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d;
+                obj.a_headings(ti+1,:,:)    = [phi theta];
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
                     iterT       = tic;                              % Set new time
@@ -187,6 +216,7 @@ classdef Arena < handle
             obj.collisions      = zeros(obj.T/obj.dt,obj.nAgents);
             obj.a_positions     = zeros(obj.T/obj.dt+1,obj.nAgents,3);
             obj.a_headings      = zeros(obj.T/obj.dt+1,obj.nAgents,2);
+            obj.a_velocities    = zeros(obj.T/obj.dt+1,obj.nAgents,3);
             obj.c_pos           = zeros(obj.T/obj.dt,3);
         end
                 
@@ -216,6 +246,32 @@ classdef Arena < handle
             %anglesZ     = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
             neighbours  = (dAbs < obj.agents{1}.cam_range & abs(angles) < 0.5*obj.agents{1}.cam_fov); %& abs(anglesZ) < 0.5*obj.agents{1}.cam_fov); % Save neighbours based on selection ||rij|| > cam_range && abs(angle(rij,cam_dir)) < 1/2*FOV
             neighbours  = neighbours';
+        end
+        
+        function pos_update = indiGuidance(obj, sp)
+            guidance_indi_pos_gain      = 0.5;
+            guidance_indi_speed_gain    = 1.8;
+            indiRuns                    = round(32*obj.dt);
+            pos_update                  = zeros(obj.nAgents,3);
+            tmpVel                      = squeeze(obj.a_velocities(max(obj.t-1,1),:,:));
+            for i=1:indiRuns
+                pos_x_err = sp(:,1) - pos_update(:,1);
+                pos_y_err = sp(:,2) - pos_update(:,2);
+                %pos_z_err = sp(:,3) - pos_update(:,3);
+                speed_sp_x = pos_x_err .* guidance_indi_pos_gain;
+                speed_sp_y = pos_y_err .* guidance_indi_pos_gain;
+                %speed_sp_z = pos_z_err * guidance_indi_pos_gain;
+                sp_accel_x = (speed_sp_x - tmpVel(:,1)) .* guidance_indi_speed_gain;
+                sp_accel_y = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
+                %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;
+                sp_accel_x = min(0.5,max(-0.5,(sp_accel_x)));
+                sp_accel_y = min(0.5,max(-0.5,(sp_accel_y)));
+                tmpVel(:,1) = tmpVel(:,1) + obj.dt .* 1./indiRuns .* sp_accel_x;
+                tmpVel(:,2) = tmpVel(:,2) + obj.dt .* 1./indiRuns .* sp_accel_y;
+                %tmpVel = tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
+                pos_update = pos_update + tmpVel;
+            end
+            obj.a_velocities(obj.t,:,:) = tmpVel;
         end
 
         function rotmat = rotMat(~,varargin)
