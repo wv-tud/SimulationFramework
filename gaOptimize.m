@@ -1,6 +1,13 @@
 global agentType;
 simulations = {};
 i = 1;
+% NN optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 35;
+% simulations{i}.type     = 'simpleNN';           % 0.0024908491
+% simulations{i}.LB       = -1 * ones(1,16);
+% simulations{i}.UB       =  1 * ones(1,16);
+% i = i + 1;
 % Pinciroli optimization
 simulations{i}          = struct();
 simulations{i}.popSize  = 75;
@@ -21,13 +28,6 @@ simulations{i}.popSize  = 75;
 simulations{i}.type     = 'sinusoid';
 simulations{i}.LB       = [-1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
 simulations{i}.UB       = [ 1   15 50 1   15 50 1   15 50 1   15 50 1];
-i = i + 1;
-% NN optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 25;
-simulations{i}.type     = 'simpleNN';           % 0.0024908491
-simulations{i}.LB       = -1 * ones(1,16);
-simulations{i}.UB       =  1 * ones(1,16);
 i = i + 1;
 %% Set general simulation parameters
 simPar = struct(...
@@ -96,7 +96,7 @@ for si = 1:length(simulations)
     options = optimoptions('ga','PopulationSize',simulations{si}.popSize, 'Display','iter', 'PlotFcn',{@gaplotbestf_scale @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag) @gaplotgenealogy},'UseParallel',1,'OutputFcn',@outputfun_ga,'CrossoverFraction',0.6);
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
-    save(strcat(['ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(end)) '.mat']),'x','fval','exitflag','output','population','scores');
+    save(strcat(['ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
     %% Genetic optimization finished, sim the winner and make video
     for i=1:length(simPar.mission)
         uArena                      = Mission(num2str(1),simPar.mission{i},{});
