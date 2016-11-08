@@ -39,11 +39,10 @@ classdef visualArena < handle
             obj.arenaVars.cam_dir           = arena.agents{1}.cam_dir;
             obj.arenaVars.cam_fov           = arena.agents{1}.cam_fov;
             obj.arenaVars.collision_range   = arena.agents{1}.collision_range;
-            obj.arenaVars.v_acc             = arena.agents{1}.v_acc;
-            obj.arenaVars.yaw_acc           = arena.agents{1}.yaw_acc;
+            obj.arenaVars.gustVelocity      = arena.gustVelocity;
             obj.arenaVars.cam_acc           = arena.agents{1}.cam_acc;
             obj.arenaVars.th_max            = arena.agents{1}.th_max;
-            obj.arenaVars.v_max            = arena.agents{1}.v_max;
+            obj.arenaVars.v_max             = arena.agents{1}.v_max;
             obj.arenaVars.seperation_range  = arena.agents{1}.seperation_range;
             obj.arenaVars.nAgents           = arena.nAgents;
             obj.arenaVars.agents            = arena.agents;
@@ -93,7 +92,7 @@ classdef visualArena < handle
             end
             obj.resolution(1) = obj.resolution(1) + 250; % Increase figure width to include table
             obj.fig             = figure('Position',[0 0 obj.resolution(1) obj.resolution(2)]);
-            obj.fig_table{1}    = figureTable(0,0.6*obj.resolution(2),obj.resolution,{'\eta_{v}','\eta_{\Psi}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(100*obj.arenaVars.v_acc) '%']),strcat([num2str(100*obj.arenaVars.yaw_acc) '%']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
+            obj.fig_table{1}    = figureTable(0,0.6*obj.resolution(2),obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
             obj.fig_table{2}    = figureTable(0,0.6*obj.resolution(2)-150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
             obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
             axis square;

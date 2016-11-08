@@ -7,6 +7,7 @@ classdef Arena < handle
         name         = 'defaultArena';  % Arena name (used for movie file)
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
+        gustVelocity = 0.1;
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -92,8 +93,13 @@ classdef Arena < handle
                 for i = 1:obj.nAgents
                     [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),squeeze(obj.a_positions(ti,i,:)), squeeze(obj.a_headings(ti,i,:)), squeeze(obj.a_velocities(ti,i,:)), find(neighbours(i,:)>0), squeeze(obj.a_positions(ti,:,:))); %#ok<FNDSB>
                 end
-                v_d                         = obj.indiGuidance(v_d);
-                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d;
+                v_d             = obj.indiGuidance(v_d);
+                noise_r         = obj.gustVelocity * randn(obj.nAgents,1);
+                noise_phi       = 2*pi() * rand(obj.nAgents,1);
+                noise_v         = zeros(obj.nAgents,3);
+                noise_v(:,1)    = cos(noise_phi) .* noise_r;
+                noise_v(:,2)    = sin(noise_phi) .* noise_r;
+                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d + noise_v;
                 obj.a_headings(ti+1,:,:)    = [phi theta];
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
