@@ -1,20 +1,6 @@
 global agentType;
 simulations = {};
 i = 1;
-% Polynomial optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'polynomial';
-simulations{i}.LB       = [0 -5*ones(1,13)];
-simulations{i}.UB       = [1  5*ones(1,13)];
-i = i + 1;
-% Sinusoid optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'sinusoid';
-simulations{i}.LB       = [0 -1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [1  1   15 50 1   15 50 1   15 50 1   15 50 1];
-i = i + 1;
 % NN optimization
 simulations{i}          = struct();
 simulations{i}.popSize  = 35;
@@ -29,6 +15,20 @@ simulations{i}.type     = 'pinciroli';          % 0.0000121633
 simulations{i}.LB       = zeros(1,2);
 simulations{i}.UB       = 1 * ones(1,2);
 i = i + 1;
+% Polynomial optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 75;
+simulations{i}.type     = 'polynomial';
+simulations{i}.LB       = [0 -5*ones(1,13)];
+simulations{i}.UB       = [1  5*ones(1,13)];
+i = i + 1;
+% Sinusoid optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 75;
+simulations{i}.type     = 'sinusoid';
+simulations{i}.LB       = [0 -1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
+simulations{i}.UB       = [1  1   15 50 1   15 50 1   15 50 1   15 50 1];
+i = i + 1;
 %% Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
@@ -42,7 +42,7 @@ simPar = struct(...
     'circle_radius',        3, ...
     'seperation_range',     1.5, ...
     'init',                 'random', ...
-    'size',                 [4 4], ...
+    'size',                 [7 7], ...
     'v_max',                2, ...
     'distance_cost',        0.08, ...
     'velocity_cost',        2, ...

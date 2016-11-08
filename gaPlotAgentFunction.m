@@ -15,7 +15,7 @@ if  size(state.Score,2) > 1
     title('Best Individual Plot: not available','interp','none');
     return;
 end
-
+[~,i] = min(state.Score);
 switch(agentType)
     case 'pinciroli'
         tmp_agent = PinciroliAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
@@ -27,9 +27,8 @@ switch(agentType)
         tmp_agent      = simpleNNAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
         tmp_agent.net  = feedforwardnet([5]);
         tmp_agent.net  = configure(tmp_agent.net, [(-tmp_agent.seperation_range - 0.3)/4 (4 -tmp_agent.seperation_range - 0.3)/4], [-1 1]);
-        tmp_agent.net  = setwb(tmp_agent.net,genome(2:end));
+        tmp_agent.net  = setwb(tmp_agent.net,state.Population(i,2:end));
 end
-[~,i] = min(state.Score);
 tmp_agent.genome = state.Population(i,:);
 tmp_agent.seperation_range = simPar.seperation_range;
 x = 0:0.05:tmp_agent.cam_range;
