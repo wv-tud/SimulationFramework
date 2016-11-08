@@ -68,9 +68,11 @@ classdef Agent < handle
                 theta                         = atan2(obj.u_d_decom.g(obj.t,3),0); 
             end
             if ~isempty(obj.neighbours{obj.t})
-                obj.dist_cost                     = obj.dist_cost + mean(abs((obj.seperation_range + obj.collision_range)./sqrt(obj.neighbours{obj.t}(:,3).^2 + obj.neighbours{obj.t}(:,4).^2) - 1));
+                nearest_neighbours = sort(abs((obj.seperation_range + obj.collision_range)./sqrt(obj.neighbours{obj.t}(:,3).^2 + obj.neighbours{obj.t}(:,4).^2) - 1));
+                obj.dist_cost      = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)));
             end
             obj.vel_cost                      = obj.vel_cost + log(norm(v_d - obj.u_d_decom.g(obj.t,:))+1);                             % Apply agent dynamics to desired velocity          
+            %pause;
 %             v_d_prev                        = (obj.pos(obj.t,:)-obj.pos(max(1,obj.t-1),:)); % Calculate dV
 %             v_noise_range                   = [obj.v_acc (2-obj.v_acc)].*sqrt(sum((v_d-v_d_prev).^2));  % Range of v noise
 %             v_noise                         = (rand(1,3)-0.5).*(v_noise_range(2)-v_noise_range(1));     % Generate v noise

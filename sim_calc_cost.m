@@ -40,12 +40,14 @@ for s=1:simPar.trialSize
         velocityCost = velocityCost + uArena.agents{j}.vel_cost;
         distanceCost = distanceCost + uArena.agents{j}.dist_cost;
     end
+    createVideo(uArena);
     %if sum(sum(uArena.collisions)) > 0
     %    fprintf(strcat([uArena.mission_type ' collisions: ' num2str(sum(sum(uArena.collisions))) '\n']));
     %end
     collisionCost = collisionCost + sum(sum(uArena.collisions));
 end
-velocityCost = velocityCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-distanceCost = distanceCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-totCost = simPar.collision_cost * collisionCost + simPar.velocity_cost * velocityCost + simPar.distance_cost * distanceCost;
+velocityCost  = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
+distanceCost  = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
+collisionCost = simPar.collision_cost * collisionCost;
+totCost = collisionCost + velocityCost + distanceCost;
 end

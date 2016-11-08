@@ -26,7 +26,7 @@ classdef polyAgent < Agent
         function v_d = polynomialCalculation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
             eps     = obj.genome(1);
-            q_i     = obj.pos - obj.c_pos;                 % Vector of current position and c
+            q_i     = obj.pos' - obj.c_pos;                 % Vector of current position and c
             g_i     = obj.global_interaction(q_i);
 %             if isa(obj.g_fun2,'function_handle')
 %                 if norm(q_i(1:2)) >= obj.g_cond
@@ -38,21 +38,29 @@ classdef polyAgent < Agent
 %                 g_i     = feval(obj.g_fun,obj.t*obj.dt,q_i,obj.v_max*obj.dt);  % Gathering 
 %             end
             L_i     = [0 0 0];                                                  % Lattice formation
-            d_i     = [0 0 0];                                                  % Dissipative energy
             if ~isempty(obj.neighbours{obj.t})
                 for j=1:size(obj.neighbours{obj.t},1)
-                    q_ij    = q_i-(obj.neighbours{obj.t}(j,3:5) - obj.c_pos(obj.t,:));                          % Relative vector between agent i and j
+                    q_ij    = q_i-(obj.neighbours{obj.t}(j,3:5) - obj.c_pos);                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
                         L_i     = L_i + 1 / q_ijn * sum((sigma/q_ijn).^(0:(length(obj.genome)-2)) .* obj.genome(2:end)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
                     end
                 end
-                L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents
+                L_i = L_i / size(obj.neighbours{obj.t},1);     % Average over nr. of agents
+            end
+            u_d = g_i + L_i;                  % Sum to find u_d
+            u_d_n = sum(u_d.^2);
+            if u_d_n > obj.v_max
+                g_i = g_i ./ u_d_n * obj.v_max;
+                L_i = L_i ./ u_d_n * obj.v_max;
+                u_d = g_i + L_i;
             end
             if obj.t > 1
                 d_i = -eps*(L_i+g_i - (obj.u_d_decom.g(obj.t-1,:)+obj.u_d_decom.L(obj.t-1,:)+obj.u_d_decom.d(obj.t-1,:)));   % Calculate dissipative energy
+            else
+                d_i = -eps*(L_i+g_i);
             end
-            u_d = g_i + L_i + d_i;                  % Sum to find u_d
+            u_d = u_d + d_i;
             obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
             obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
             obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
