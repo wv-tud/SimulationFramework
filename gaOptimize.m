@@ -1,20 +1,6 @@
 global agentType;
 simulations = {};
 i = 1;
-% NN optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 35;
-simulations{i}.type     = 'simpleNN';           % 0.0024908491
-simulations{i}.LB       = -1 * ones(1,17);
-simulations{i}.UB       =  1 * ones(1,17);
-i = i + 1;
-% Pinciroli optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'pinciroli';          % 0.0000121633
-simulations{i}.LB       = zeros(1,2);
-simulations{i}.UB       = 1 * ones(1,2);
-i = i + 1;
 % Polynomial optimization
 simulations{i}          = struct();
 simulations{i}.popSize  = 75;
@@ -28,6 +14,20 @@ simulations{i}.popSize  = 75;
 simulations{i}.type     = 'sinusoid';
 simulations{i}.LB       = [0 -1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
 simulations{i}.UB       = [1  1   15 50 1   15 50 1   15 50 1   15 50 1];
+i = i + 1;
+% NN optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 35;
+simulations{i}.type     = 'simpleNN';           % 0.0024908491
+simulations{i}.LB       = -1 * ones(1,17);
+simulations{i}.UB       =  1 * ones(1,17);
+i = i + 1;
+% Pinciroli optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 75;
+simulations{i}.type     = 'pinciroli';          % 0.0000121633
+simulations{i}.LB       = zeros(1,2);
+simulations{i}.UB       = 1 * ones(1,2);
 i = i + 1;
 %% Set general simulation parameters
 simPar = struct(...
@@ -44,9 +44,9 @@ simPar = struct(...
     'init',                 'random', ...
     'size',                 [4 4], ...
     'v_max',                2, ...
-    'distance_cost',        0.2, ...
-    'velocity_cost',        1, ...
-    'collision_cost',       1 ...
+    'distance_cost',        0.08, ...
+    'velocity_cost',        2, ...
+    'collision_cost',       3 ...
     );
 simPar.mission = {'cyberzooBucket'};
 %% Run all simulations

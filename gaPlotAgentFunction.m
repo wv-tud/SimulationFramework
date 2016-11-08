@@ -43,7 +43,7 @@ switch flag
         hold off;
         grid on;
         set(gca,'xlim',[0, tmp_agent.cam_range])
-        set(gca,'ylim',[min(y), 2 * simPar.v_max])
+        set(gca,'ylim',[-2 * simPar.v_max, 2 * simPar.v_max])
         title('Current Best Individual','interp','none')
         xlabel('Distance [m]','interp','none');
         ylabel('Velocity response [m/s]','interp','none');
