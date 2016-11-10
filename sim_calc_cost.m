@@ -17,7 +17,7 @@ for s=1:simPar.trialSize
            uArena                      = Mission(num2str(1),simPar.mission{missionIndex},{});
         end
     end 
-    uArena.type                 = simPar.type;
+    uArena.typeName             = simPar.type;
     uArena.T                    = simPar.simTime;
     uArena.dt                   = simPar.fps^(-1);
     uArena.nAgents              = simPar.nAgents;
