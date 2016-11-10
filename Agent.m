@@ -69,9 +69,9 @@ classdef Agent < handle
             end
             if ~isempty(obj.neighbours{obj.t})
                 nearest_neighbours = sort(abs((obj.seperation_range + obj.collision_range)./sqrt(obj.neighbours{obj.t}(:,3).^2 + obj.neighbours{obj.t}(:,4).^2) - 1));
-                obj.dist_cost      = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)));
+                obj.dist_cost      = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
             end
-            obj.vel_cost                      = obj.vel_cost + log(norm(v_d - obj.u_d_decom.g(obj.t,:))+1);                             % Apply agent dynamics to desired velocity          
+            obj.vel_cost                      = obj.vel_cost + norm(v_d - obj.u_d_decom.g(obj.t,:)).^2;                             % Apply agent dynamics to desired velocity          
             %pause;
 %             v_d_prev                        = (obj.pos(obj.t,:)-obj.pos(max(1,obj.t-1),:)); % Calculate dV
 %             v_noise_range                   = [obj.v_acc (2-obj.v_acc)].*sqrt(sum((v_d-v_d_prev).^2));  % Range of v noise
@@ -180,8 +180,8 @@ classdef Agent < handle
             w = reshape(g_i(:,3),length(y_arr),length(x_arr))./vNorm;
             F = figure(3);
             hold on;
-            surf(x_arr,y_arr, 1/obj.dt * vNorm,'EdgeColor','none','LineStyle','none');
-            quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), 1/obj.dt * vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
+            surf(x_arr,y_arr, vNorm,'EdgeColor','none','LineStyle','none');
+            quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
             hold off;
             axis equal tight;
             h = colorbar();
@@ -204,12 +204,12 @@ classdef Agent < handle
         end
         
         function g = global_interaction(obj,x)
-            g = obj.globalField(x, obj.seperation_range + obj.collision_range, obj.dt * obj.v_max);
+            g = obj.globalField(x, obj.seperation_range + obj.collision_range, obj.v_max);
         end
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.05 - 1 / (1 + exp(5 / bucket_radius * (norm(pos(1:2)) - bucket_radius)))) * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.0 - 1 / (1 + exp(5 / bucket_radius * (norm(pos(1:2)) - bucket_radius)))) * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
     end  
 end

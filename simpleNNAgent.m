@@ -83,7 +83,7 @@ classdef simpleNNAgent < Agent
         end
         
         function y = local_interaction(obj,x)
-            y = obj.net(x);
+            y = obj.v_max * obj.net(obj.nnNormI(x));
         end
     end
     

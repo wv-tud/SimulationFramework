@@ -7,7 +7,7 @@ classdef Arena < handle
         name         = 'defaultArena';  % Arena name (used for movie file)
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 0.1;
+        gustVelocity = 0.1;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -35,6 +35,8 @@ classdef Arena < handle
         simId;                          % Simulation identifier
         circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
         net          = @(x) 0;          % Placeholder for simpleNN network
+        noise_u;
+        noise_v;
     end
     
     methods
@@ -94,12 +96,8 @@ classdef Arena < handle
                     [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),squeeze(obj.a_positions(ti,i,:)), squeeze(obj.a_headings(ti,i,:)), squeeze(obj.a_velocities(ti,i,:)), find(neighbours(i,:)>0), squeeze(obj.a_positions(ti,:,:))); %#ok<FNDSB>
                 end
                 v_d             = obj.indiGuidance(v_d);
-                noise_r         = obj.gustVelocity * randn(obj.nAgents,1);
-                noise_phi       = 2*pi() * rand(obj.nAgents,1);
-                noise_v         = zeros(obj.nAgents,3);
-                noise_v(:,1)    = cos(noise_phi) .* noise_r;
-                noise_v(:,2)    = sin(noise_phi) .* noise_r;
-                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d + noise_v;
+
+                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
                 obj.a_headings(ti+1,:,:)    = [phi theta];
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
@@ -224,6 +222,40 @@ classdef Arena < handle
             obj.a_headings      = zeros(obj.T/obj.dt+1,obj.nAgents,2);
             obj.a_velocities    = zeros(obj.T/obj.dt+1,obj.nAgents,3);
             obj.c_pos           = zeros(obj.T/obj.dt,3);
+            
+            sigma_w     = 0.1 * obj.gustVelocity; % W20 = 15 knts = 7.7 m/s
+            sigma_u     = sigma_w / (0.177 + 0.000823 * 10)^(0.4);
+            sigma_v     = sigma_u;
+            
+            V           = 0.5 * obj.agents{1}.v_max;
+            Lu          = 1 / (0.177 + 0.000823*1)^(1.2);
+            Lv          = Lu; % 0.5 * Lu?
+            gt          = 0:obj.dt/round(32*obj.dt):(obj.T - obj.dt);
+            wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
+            wv          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
+            C           = [ 1 0 ];
+            D           = [ 0 ];
+            % Noise u
+            obj.noise_u = zeros(obj.nAgents, obj.T/obj.dt*round(32*obj.dt)-1);
+            rat         = V / Lu;
+            A           = [ 0 1; -rat^2 -2*rat ];
+            B           = sigma_u * [ sqrt(3*rat); (1- 2 * sqrt(3)) * sqrt((rat^3)) ];
+            for i = 1:obj.nAgents
+                obj.noise_u(i,:)  = lsim(A, B, C, D, wu(i,:), gt);
+            end
+            % Noise v
+            obj.noise_v = zeros(obj.nAgents, obj.T/obj.dt*round(32*obj.dt)-1);
+            rat         = V / Lv;
+            A           = [ 0 1; -rat^2 -2*rat ];
+            B           = sigma_v * [ sqrt(3*rat); (1- 2 * sqrt(3)) * sqrt((rat^3)) ];
+            for i = 1:obj.nAgents
+                obj.noise_v(i,:)  = lsim(A, B, C, D, wv(i,:), gt);
+            end
+            figure();
+            hold all;
+            plot(gt,obj.noise_u);
+            plot(gt,obj.noise_v);
+            hold off;
         end
                 
         function [neighbours,dAbs] = detectNeighbours(obj,t)
@@ -275,7 +307,8 @@ classdef Arena < handle
                 tmpVel(:,1) = tmpVel(:,1) + obj.dt .* 1./indiRuns .* sp_accel_x;
                 tmpVel(:,2) = tmpVel(:,2) + obj.dt .* 1./indiRuns .* sp_accel_y;
                 %tmpVel = tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
-                pos_update = pos_update + tmpVel;
+                noise = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
+                pos_update = pos_update + tmpVel + noise;
             end
             obj.a_velocities(obj.t,:,:) = tmpVel;
         end

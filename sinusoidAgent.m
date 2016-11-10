@@ -51,8 +51,8 @@ classdef sinusoidAgent < Agent
                 end
                 L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents
             end
-            u_d = g_i + L_i;                  % Sum to find u_d
-            u_d_n = sum(u_d.^2);
+            u_d     = g_i + L_i;                  % Sum to find u_d
+            u_d_n   = sum(u_d.^2);
             if u_d_n > obj.v_max
                 g_i = g_i ./ u_d_n * obj.v_max;
                 L_i = L_i ./ u_d_n * obj.v_max;
@@ -63,19 +63,19 @@ classdef sinusoidAgent < Agent
             else
                 d_i = -eps*(L_i+g_i);
             end
-            u_d = u_d + d_i;
-            obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
-            obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
-            obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
-            v_d = u_d;                              % Convert u_d to v_d
+            u_d                         = u_d + d_i;
+            obj.u_d_decom.g(obj.t,:)    = g_i;       % Save to array for plotting
+            obj.u_d_decom.L(obj.t,:)    = L_i;       % Save to array for plotting
+            obj.u_d_decom.d(obj.t,:)    = d_i;       % Save to array for plotting
+            v_d                         = u_d;       % Convert u_d to v_d
             
         end
         
         function y = local_interaction(obj,x)
-            y = obj.genome(1);
+            y       = obj.genome(2);
             sigma   = obj.seperation_range + obj.collision_range;
-            for l=1:(length(obj.genome)-1)/3
-                y = y + obj.genome(2+(l-1)*3) * sin(2*pi()*obj.genome(3+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(4+(l-1)*3));
+            for l=1:(length(obj.genome)-2)/3
+                y = y + obj.genome(3+(l-1)*3) * sin(2*pi()*obj.genome(4+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(5+(l-1)*3));
             end
         end
         
