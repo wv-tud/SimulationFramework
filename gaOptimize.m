@@ -106,7 +106,7 @@ for si = 1:length(simulations)
      );
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
-    save(strcat(['ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
+    save(strcat(['./data/ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
     %% Genetic optimization finished, sim the winner and make video
     sim_calc_cost(simPar, x, true);
 end
