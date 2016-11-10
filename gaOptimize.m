@@ -118,7 +118,7 @@ for si = 1:length(simulations)
         uArena.size                 = simPar.size;
         uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', x);
         if strcmp(simPar.type,'simpleNN')
-            uArena.net              = setwb(simPar.net,x);
+            uArena.net              = setwb(simPar.net,x(2:end));
         end
         % Save/Display options
         uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
