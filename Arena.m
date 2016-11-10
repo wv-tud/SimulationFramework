@@ -251,11 +251,11 @@ classdef Arena < handle
             for i = 1:obj.nAgents
                 obj.noise_v(i,:)  = lsim(A, B, C, D, wv(i,:), gt);
             end
-            figure();
-            hold all;
-            plot(gt,obj.noise_u);
-            plot(gt,obj.noise_v);
-            hold off;
+%             figure();
+%             hold all;
+%             plot(gt,obj.noise_u);
+%             plot(gt,obj.noise_v);
+%             hold off;
         end
                 
         function [neighbours,dAbs] = detectNeighbours(obj,t)
