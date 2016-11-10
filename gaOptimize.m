@@ -91,7 +91,7 @@ for si = 1:length(simulations)
     end
     %% Do a sample simulation to get an estimate of the time
     pT              = tic;
-    [cost]          = sim_calc_cost(simPar, sampleGenome);
+    [cost]          = sim_calc_cost(simPar, sampleGenome, false);
     simt            = toc(pT);
     fprintf(strcat(['\n\nSimulation ' simPar.type ' took ' num2str(simt) 's - performance: (cost: ' num2str(cost) ')\n\n']));
     %% Run GA
