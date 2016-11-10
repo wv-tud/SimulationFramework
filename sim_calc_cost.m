@@ -49,8 +49,8 @@ end
 velocityCost  = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
 distanceCost  = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
 collisionCost = simPar.collision_cost * collisionCost;
-velocityCost
-distanceCost
-collisionCost
+%velocityCost
+%distanceCost
+%collisionCost
 totCost = collisionCost + velocityCost + distanceCost;
 end

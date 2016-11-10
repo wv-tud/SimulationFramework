@@ -1,4 +1,3 @@
-global agentType;
 simulations = {};
 i = 1;
 % NN optimization
@@ -92,7 +91,6 @@ for si = 1:length(simulations)
     simt            = toc(pT);
     fprintf(strcat(['\n\nSimulation ' simPar.type ' took ' num2str(simt) 's - performance: (cost: ' num2str(cost) ')\n\n']));
     %% Run GA
-    agentType = simPar.type;
     options = optimoptions('ga',...
         'PopulationSize',simulations{si}.popSize, ...
         'Display','iter', ...
