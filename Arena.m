@@ -171,22 +171,34 @@ classdef Arena < handle
             obj.nAgents = cAgents + newAgents;
             if strcmp(obj.init,'random') % Find collisions and resolve them before continuing
                 collisionFree = 0;
+                k = 1;
+                u = 1;
+                tries = 0;
                 while collisionFree == 0
                     [~,dAbs]    = obj.detectNeighbours(1);
-                    [i,~]       = find(dAbs<(obj.agents{1}.collision_range+2*obj.agents{1}.v_max*obj.dt));
+                    [i,~]       = find(dAbs<(obj.agents{1}.collision_range+k*obj.agents{1}.seperation_range));
                     if isempty(i)
                         obj.collisions = 0;
                         collisionFree  = 1;
                         continue;
                     end
+                    tries = tries + 1;
+                    if mod(tries,2) == 0
+                        if k > 0.8
+                            k = 0.99 * k;   % First decrease the required seperation to 80%
+                        else
+                            u = 1.01 * u;   % If that didn't work then let's try to increase the size
+                        end
+                    end
                     id = unique(i);
                     for i=1:length(id)
-                        pos                             = unifrnd(-0.5,0.5,1,2);
+                        pos                             = unifrnd(-0.5*u,0.5*u,1,2);
                         pos(:,1)                        = pos(:,1)*obj.size(1);
                         pos(:,2)                        = pos(:,2)*obj.size(2);
                         obj.agents{id(i)}.pos(1,1:2)    = pos;
                     end
                 end
+                obj.size = obj.size .* u;   % Save the (optionally) updated size
             end
         end
         
