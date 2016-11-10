@@ -1,4 +1,4 @@
-function [ totCost ] = sim_calc_cost( simPar, genome )
+function [ totCost ] = sim_calc_cost( simPar, genome, makeVideo )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
@@ -17,6 +17,7 @@ for s=1:simPar.trialSize
            uArena                      = Mission(num2str(1),simPar.mission{missionIndex},{});
         end
     end 
+    uArena.type                 = simPar.type;
     uArena.T                    = simPar.simTime;
     uArena.dt                   = simPar.fps^(-1);
     uArena.nAgents              = simPar.nAgents;
@@ -27,20 +28,25 @@ for s=1:simPar.trialSize
     uArena.init                 = simPar.init;
     uArena.size                 = simPar.size;
     if strcmp(simPar.type,'simpleNN')
-        uArena.net              = setwb(simPar.net,genome(2:end));
+        simPar.net              = setwb(simPar.net,genome(2:end));
+        uArena.agent_conf       = struct('v_max',simPar.v_max, 'genome', genome, 'net', @(x) simPar.net(x));
+    else
+        uArena.agent_conf       = struct('v_max',simPar.v_max, 'genome', genome);
     end
-    uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
+    
     % Save/Display options
     uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
     uArena.save                 = 1;   % Save data to .mat file
     %fprintf(strcat(['Simulation ' num2str(i) ': Initialised arena and agents\n']));
     
-    simT = tic; uArena.Simulate(); t = toc(simT);
+    uArena.Simulate();
     for j=1:simPar.nAgents
         velocityCost = velocityCost + uArena.agents{j}.vel_cost;
         distanceCost = distanceCost + uArena.agents{j}.dist_cost;
     end
-    %createVideo(uArena);
+    if makeVideo
+        createVideo(uArena);
+    end
     %if sum(sum(uArena.collisions)) > 0
     %    fprintf(strcat([uArena.mission_type ' collisions: ' num2str(sum(sum(uArena.collisions))) '\n']));
     %end

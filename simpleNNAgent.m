@@ -8,14 +8,12 @@ classdef simpleNNAgent < Agent
         g_fun               = [];                   % Function handle for global pinciroli attractor  
         g_fun2              = [];                   % Second function handle for conditional functions
         g_cond              = 0;                    % Condition for second function handle
-        tL                  = 0;
-        net;
+        tL                  = 0;              
     end
     
     methods
         function obj = simpleNNAgent(arena,id,pos,head)
             obj     = obj@Agent(arena,id,pos,head);
-            obj.net = arena.net;
 %             if ~isa(obj.g_fun,'function_handle')
 %                 a           = obj.v_max*obj.dt/(((obj.swarmSize*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
 %                 obj.g_fun   = @(varargin) min(a*norm(varargin{2}).^2,varargin{3})*varargin{2}./norm(varargin{2}).*[-1 -1 0];
@@ -58,7 +56,8 @@ classdef simpleNNAgent < Agent
                         %tLn     = tLn + toc(tLt);
                     end
                 end
-                L_i = sum(obj.v_max .* repmat(obj.net(obj.nnNormI(vq_ijn)'),3,1)' .* vL_i,1);
+                nnL_i   = obj.net(obj.nnNormI(vq_ijn'))';
+                L_i     = sum(obj.v_max .* [nnL_i nnL_i nnL_i] .* vL_i,1);
                 %obj.tL = (obj.tL * (obj.t-1) + toc(tLt)/length(obj.neighbours{obj.t})) / obj.t;
                 %fprintf('%0.10f\n', obj.tL);
                 L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents

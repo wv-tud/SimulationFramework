@@ -24,10 +24,11 @@ switch(agentType)
     case 'sinusoid'
         tmp_agent = sinusoidAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
     case 'simpleNN'
-        tmp_agent      = simpleNNAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
-        tmp_agent.net  = feedforwardnet([5]);
-        tmp_agent.net  = configure(tmp_agent.net, [(-tmp_agent.seperation_range - 0.3)/4 (4 -tmp_agent.seperation_range - 0.3)/4], [-1 1]);
-        tmp_agent.net  = setwb(tmp_agent.net,state.Population(i,2:end));
+        tmp_agent       = simpleNNAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
+        tmp_net         = feedforwardnet([simPar.nnSize]);
+        tmp_net         = configure(tmp_net, [(-tmp_agent.seperation_range - 0.3)/4 (4 -tmp_agent.seperation_range - 0.3)/4], [-1 1]);
+        tmp_net         = setwb(tmp_net,state.Population(i,2:end));
+        tmp_agent.net   = @(x) tmp_net(x);
 end
 tmp_agent.genome            = state.Population(i,:);
 tmp_agent.seperation_range  = simPar.seperation_range;

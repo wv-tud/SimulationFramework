@@ -5,8 +5,9 @@ i = 1;
 simulations{i}          = struct();
 simulations{i}.popSize  = 35;
 simulations{i}.type     = 'simpleNN';           % 0.0024908491
-simulations{i}.LB       = -1 * ones(1,17);
-simulations{i}.UB       =  1 * ones(1,17);
+simulations{i}.nnSize   = 15;
+simulations{i}.LB       = -1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
+simulations{i}.UB       =  1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
 i = i + 1;
 % Pinciroli optimization
 simulations{i}          = struct();
@@ -44,9 +45,10 @@ simPar = struct(...
     'init',                 'random', ...
     'size',                 [7 7], ...
     'v_max',                2, ...
-    'distance_cost',        0.08, ...
+    'distance_cost',        1, ...
     'velocity_cost',        2, ...
-    'collision_cost',       3 ...
+    'collision_cost',       3, ...
+    'nnSize',               15 ...
     );
 simPar.mission = {'cyberzooBucket'};
 %% Run all simulations
@@ -75,12 +77,13 @@ for si = 1:length(simulations)
             sampleGenome            = [0.1 -0.0267 -5.4729 0.1886 0.7875 0.9981 34.0776 0.6417 1.3918 37.7451 0.9187 1.4766 15.6458 0.9927];
         case 'simpleNN'
             simPar.type             = 'simpleNN';
+            simPar.nnSize           = simulations{si}.nnSize;
             simPar.nAgents          = 9;
             simPar.polyAgents       = 0;
             simPar.nnAgents         = 9;
             simPar.sinusoidAgents   = 0;
-            sampleGenome            = [0.1 rand(1,16)];
-            simPar.net              = feedforwardnet([5]);
+            sampleGenome            = [0.1 rand(1,3*simPar.nnSize+1)];
+            simPar.net              = feedforwardnet([simPar.nnSize]);
             %simPar.net.layers{1}.transferFcn = 'logsig';
             %simPar.net.layers{2}.transferFcn = 'radbas';
             %simPar.net.layers{3}.transferFcn = 'purelin';
@@ -96,45 +99,14 @@ for si = 1:length(simulations)
     options = optimoptions('ga',...
         'PopulationSize',simulations{si}.popSize, ...
         'Display','iter', ...
-        'PlotFcn',{@gaplotbestf_scale @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag) @gaplotgenealogy},...
+        'PlotFcn',{@gaplotbestf_scale @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag)},...
         'UseParallel',1,...
-        'OutputFcn',@outputfun_ga,...
+...%        'OutputFcn',@outputfun_ga,...
         'CrossoverFraction',0.8...
      );
-    [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
+    [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
     save(strcat(['ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
     %% Genetic optimization finished, sim the winner and make video
-    for i=1:length(simPar.mission)
-        uArena                      = Mission(num2str(1),simPar.mission{i},{});
-        uArena.T                    = simPar.simTime;
-        uArena.dt                   = simPar.fps^(-1);
-        uArena.nAgents              = simPar.nAgents;
-        uArena.nnAgents             = simPar.nnAgents;
-        uArena.circle_radius        = simPar.circle_radius;
-        uArena.separation_range     = simPar.seperation_range;
-        uArena.polyAgents           = simPar.polyAgents;
-        uArena.init                 = simPar.init;
-        uArena.size                 = simPar.size;
-        uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', x);
-        if strcmp(simPar.type,'simpleNN')
-            uArena.net              = setwb(simPar.net,x(2:end));
-        end
-        % Save/Display options
-        uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
-        uArena.save                 = 1;   % Save data to .mat file
-        distanceCost = 0;
-        velocityCost = 0;
-        collisionCost = 0;
-        %fprintf(strcat(['Simulation ' num2str(i) ': Initialised arena and agents\n']));
-        simT = tic; uArena.Simulate(); t = toc(simT);
-        for j=1:simPar.nAgents
-            velocityCost = velocityCost + simPar.velocity_cost * uArena.agents{j}.vel_cost;
-            distanceCost = distanceCost + simPar.distance_cost * uArena.agents{j}.dist_cost;
-        end
-        collisionCost = collisionCost + simPar.collision_cost * sum(sum(uArena.collisions));
-        velocityCost = velocityCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-        distanceCost = distanceCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-        createVideo(uArena);
-    end
+    sim_calc_cost(simPar, x, true);
 end

@@ -5,6 +5,7 @@ classdef Arena < handle
     properties
         % Simulation parameters
         name         = 'defaultArena';  % Arena name (used for movie file)
+        typeName     = 'default';     % Defines arena type name
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
         gustVelocity = 0.1;               % m/s
@@ -34,7 +35,6 @@ classdef Arena < handle
         axes;                           % Axes handle
         simId;                          % Simulation identifier
         circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
-        net          = @(x) 0;          % Placeholder for simpleNN network
         noise_u;
         noise_v;
     end
@@ -205,9 +205,9 @@ classdef Arena < handle
         function initSimulation(obj)
             % Naming
             if isa(obj,'Mission')
-                obj.name    =  sprintf('Pinciroli-%0.0f-%s-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.nAgents,obj.mission_type,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
+                obj.name    =  sprintf('%s-%0.0f-%s-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.typeName, obj.nAgents,obj.mission_type,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
             else
-                obj.name    =  sprintf('Pinciroli-%0.0f-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.nAgents,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
+                obj.name    =  sprintf('%s-%0.0f-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.typeName, obj.nAgents,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
             end
             file_clear  = 0;
             version     = 1;

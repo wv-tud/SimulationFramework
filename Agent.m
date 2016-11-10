@@ -23,6 +23,7 @@ classdef Agent < handle
         vel                 = [];
         genome              = [];
         collisions          = 0;                    % Matrix containing collisions (t,id)
+        net                 = @(x) 0;               % Placeholder for simpleNN network
         vel_cost            = 0;
         dist_cost           = 0;
         id;                                         % UID of agent
