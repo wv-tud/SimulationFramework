@@ -28,7 +28,7 @@ simulations{i}          = struct();
 simulations{i}.popSize  = 75;
 simulations{i}.type     = 'sinusoid';
 simulations{i}.LB       = [0 -1  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [1  1   15 50 1   15 50 1   15 50 1   15 50 1];
+simulations{i}.UB       = [1  1   15  5 1   15 50 1   15  5 1   15  5 1];
 i = i + 1;
 % Set general simulation parameters
 simPar = struct(...
@@ -52,6 +52,8 @@ simPar = struct(...
     );
 simPar.mission = {'cyberzooBucket'};
 %% Run all simulations
+x_store = zeros(length(simulations),1);
+simPar_store = {};
 for si = 1:length(simulations)
     switch simulations{si}.type 
         case 'pinciroli'
@@ -108,5 +110,9 @@ for si = 1:length(simulations)
     %% save genome to file
     save(strcat(['./data/ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
     %% Genetic optimization finished, sim the winner and make video
-    sim_calc_cost(simPar, x, true);
+    x_store(si)         = x;
+    simPar_store{si}    = simPar;
+end
+for i = 1:length(simulations)
+    sim_calc_cost(simPar_store{si}, x_store(si), true);
 end
