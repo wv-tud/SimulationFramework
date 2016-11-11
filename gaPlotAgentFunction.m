@@ -38,7 +38,7 @@ switch flag
         hold on;
         plot([x(1) x(end)],[simPar.v_max simPar.v_max],'--','Color','black');
         plot([x(1) x(end)],[-simPar.v_max -simPar.v_max],'--','Color','black');
-        plot([x(1) x(end)],[0 0],'-','black');
+        plot([x(1) x(end)],[0 0],'-','Color','black');
         y = tmp_agent.getAgentFunction(x);
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
