@@ -35,12 +35,13 @@ tmp_agent.seperation_range  = simPar.seperation_range;
 x                           = 0:0.05:tmp_agent.cam_range;
 switch flag
     case 'init'
-        y = tmp_agent.getAgentFunction(x);
-        h = plot(x,y);
-        set(h,'Tag','gaPlotAgentFunction');
         hold on;
         plot([x(1) x(end)],[simPar.v_max simPar.v_max],'--','Color','black');
         plot([x(1) x(end)],[-simPar.v_max -simPar.v_max],'--','Color','black');
+        plot([x(1) x(end)],[0 0],'-','black');
+        y = tmp_agent.getAgentFunction(x);
+        h = plot(x,y);
+        set(h,'Tag','gaPlotAgentFunction');
         hold off;
         grid on;
         set(gca,'xlim',[0, tmp_agent.cam_range])
