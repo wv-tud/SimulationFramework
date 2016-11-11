@@ -90,7 +90,7 @@ classdef visualArena < handle
                     obj.resolution(1) = obj.resolution(1).*round((obj.p_axe_lim(2)-obj.p_axe_lim(1))/(obj.p_axe_lim(4)-obj.p_axe_lim(3)),3);
                 end
             end
-            obj.resolution(1) = obj.resolution(1) + 250; % Increase figure width to include table
+            obj.resolution(1)   = obj.resolution(1) + 250; % Increase figure width to include table
             obj.fig             = figure('Position',[0 0 obj.resolution(1) obj.resolution(2)]);
             obj.fig_table{1}    = figureTable(0,0.6*obj.resolution(2),obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
             obj.fig_table{2}    = figureTable(0,0.6*obj.resolution(2)-150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
@@ -258,6 +258,12 @@ classdef visualArena < handle
             end
             % Update figure table
             obj.fig_table{2}.updateTable({collision_count sprintf('%0.1f',t*obj.arenaVars.dt)}); % Update time and collisions
+            pos = get(obj.fig, 'pos');
+            if pos(3) ~= obj.resolution(1) || pos(4) ~= obj.resolution(2)
+                obj.resolution(1) = pos(3);
+                obj.resolution(2) = pos(4);
+                set(obj.fig,'pos',[pos(1) pos(2) obj.resolution(1) obj.resolution(2)]);
+            end
             drawnow;
             % Save frame or add to movie
             if obj.frame_save==1
