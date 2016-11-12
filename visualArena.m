@@ -92,10 +92,11 @@ classdef visualArena < handle
             end
             obj.resolution(1)   = obj.resolution(1) + 250; % Increase figure width to include table
             obj.fig             = figure('Position',[0 0 obj.resolution(1) obj.resolution(2)]);
-            obj.fig_table{1}    = figureTable(0,0.6*obj.resolution(2),obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
-            obj.fig_table{2}    = figureTable(0,0.6*obj.resolution(2)-150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
+            obj.fig_table{1}    = figureTable(0,240,obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
+            obj.fig_table{2}    = figureTable(0,150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
             obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
             axis square;
+            grid minor;
             set(obj.fig,'PaperPositionMode','manual');
             set(obj.fig,'PaperPosition',[100 100 obj.resolution(1) obj.resolution(2)]);
             set(obj.fig,'Renderer','opengl','DockControls','off','MenuBar','none','ToolBar','none','Resize','off','InvertHardcopy','off');
@@ -258,13 +259,11 @@ classdef visualArena < handle
             end
             % Update figure table
             obj.fig_table{2}.updateTable({collision_count sprintf('%0.1f',t*obj.arenaVars.dt)}); % Update time and collisions
+            drawnow;
             pos = get(obj.fig, 'pos');
             if pos(3) ~= obj.resolution(1) || pos(4) ~= obj.resolution(2)
-                obj.resolution(1) = pos(3);
-                obj.resolution(2) = pos(4);
                 set(obj.fig,'pos',[pos(1) pos(2) obj.resolution(1) obj.resolution(2)]);
             end
-            drawnow;
             % Save frame or add to movie
             if obj.frame_save==1
                 print(obj.fig,'-dsvg',strcat(['./movies_' obj.diskType '/frames/' obj.name '_frame-' num2str(t*obj.arenaVars.dt) '.svg'])); %#ok Save every frame as EPS file
@@ -272,7 +271,11 @@ classdef visualArena < handle
                 %saveas(obj.fig,strcat(['./movies_' obj.diskType '/frames/' obj.name '_frame-' num2str(t*obj.arenaVars.dt) '.png'])); % Save every frame as PNG file
             else
                 F = getframe(obj.fig);
-                writeVideo(obj.movie,F);
+                if obj.resolution(1) ~= size(F.cdata,2) || obj.resolution(2) ~= size(F.cdata,1)
+                    fprintf('ERROR: Frame wrong size (%i,%i) iso (%i,%i).\n', size(F.cdata,2),size(F.cdata,1),obj.resolution(1),obj.resolution(2));
+                else
+                    writeVideo(obj.movie,F);
+                end
             end
             if obj.showFig==0
                 set(obj.fig,'Visible','off'); 

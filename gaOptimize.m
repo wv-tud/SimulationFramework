@@ -1,34 +1,34 @@
 global agentType;
 simulations = {};
 i = 1;
-% % NN optimization
-% simulations{i}          = struct();
-% simulations{i}.popSize  = 35;
-% simulations{i}.type     = 'simpleNN';           % 0.0024908491
-% simulations{i}.nnSize   = 15;
-% simulations{i}.LB       = -1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
-% simulations{i}.UB       =  1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
-% i = i + 1;
-% Pinciroli optimization
+% NN optimization
 simulations{i}          = struct();
 simulations{i}.popSize  = 35;
+simulations{i}.type     = 'simpleNN';           % 0.0024908491
+simulations{i}.nnSize   = 15;
+simulations{i}.LB       = -1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
+simulations{i}.UB       =  1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
+i = i + 1;
+% Pinciroli optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'pinciroli';          % 0.0000121633
 simulations{i}.LB       = zeros(1,2);
 simulations{i}.UB       = [0.5 0.5];
 i = i + 1;
 % Polynomial optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 35;
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'polynomial';
 simulations{i}.LB       = [0 -5*ones(1,13)];
 simulations{i}.UB       = [0.5  5*ones(1,13)];
 i = i + 1;
 % Sinusoid optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 35;
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'sinusoid';
 simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [0.5  0.5   15  5 1   15 50 1   15  5 1   15  5 1];
+simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
 i = i + 1;
 % Set general simulation parameters
 simPar = struct(...
@@ -113,6 +113,9 @@ for si = 1:length(simulations)
     x_store{si}         = x;
     simPar_store{si}    = simPar;
 end
+%% Create videos
 for i = 1:length(simulations)
-    sim_calc_cost(simPar_store{si}, x_store{si}, true);
+    close all;
+    agentType = simPar_store{i}.type;
+    sim_calc_cost(simPar_store{i}, x_store{i}, true);
 end
