@@ -69,21 +69,12 @@ classdef Agent < handle
                 theta                         = atan2(obj.u_d_decom.g(obj.t,3),0); 
             end
             if ~isempty(obj.neighbours{obj.t})
-                nearest_neighbours = sort(abs((obj.seperation_range + obj.collision_range)./sqrt(obj.neighbours{obj.t}(:,3).^2 + obj.neighbours{obj.t}(:,4).^2) - 1));
-                obj.dist_cost      = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
+                q_ijn               = sqrt((obj.pos(1) - obj.neighbours{obj.t}(:,3)).^2 + (obj.pos(2) - obj.neighbours{obj.t}(:,4)).^2);
+                nearest_neighbours  = sort(abs((obj.seperation_range + obj.collision_range)./q_ijn - 1));
+                obj.dist_cost       = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
             end
-            obj.vel_cost                      = obj.vel_cost + norm(v_d - obj.u_d_decom.g(obj.t,:)).^2;                             % Apply agent dynamics to desired velocity          
-            %pause;
-%             v_d_prev                        = (obj.pos(obj.t,:)-obj.pos(max(1,obj.t-1),:)); % Calculate dV
-%             v_noise_range                   = [obj.v_acc (2-obj.v_acc)].*sqrt(sum((v_d-v_d_prev).^2));  % Range of v noise
-%             v_noise                         = (rand(1,3)-0.5).*(v_noise_range(2)-v_noise_range(1));     % Generate v noise
-%             obj.noise_v(obj.t,:)      = v_noise;
-%             th_noise_range                  = [obj.yaw_acc (2-obj.yaw_acc)].*(theta_change);            % Range of yaw noise
-%             th_noise                        = (rand(1)-0.5).*(th_noise_range(2)-th_noise_range(1));     % Generate yaw noise
-%             obj.noise_th(obj.t)       = th_noise;
-%             obj.pos(obj.t+1,:)        = obj.pos(obj.t,:) + v_d + v_noise;                   % Save agent position
-%             obj.heading(obj.t+1,:)    = [theta+th_noise,phi];                                     % Save agent heading
-        end
+            obj.vel_cost        = obj.vel_cost + norm(v_d - obj.u_d_decom.g(obj.t,:)).^2;                             % Apply agent dynamics to desired velocity          
+       end
                 
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions)
             m_neighbours    = [];
@@ -104,13 +95,13 @@ classdef Agent < handle
             end
         end
         
-        function plotVelocityComponents(obj)
+        function plotVelocityComponents(obj,arena)
             H = figure(2);
             Fpos = get(H,'pos');
             set(H,'Position',[Fpos(1) Fpos(2) 1000 600]);
             h = uicontrol('style','slider','units','pixel','position',[20 20 960 20],'min',1,'max',obj.swarmSize,'sliderstep',[1/(obj.swarmSize-1) 1/(obj.swarmSize-1)],'Value',obj.id);
             uicontrol('style','text','units','pixel','position',[490 0 54 20],'String',strcat(['Agent ' num2str(obj.id)]));
-            %addlistener(h,'ContinuousValueChange',@(hObject, event) obj.arena.agents{round(h.Value)}.plotVelocityComponents());
+            addlistener(h,'ContinuousValueChange',@(hObject, event) arena.agents{round(h.Value)}.plotVelocityComponents());
 
             subplot(4,1,1);
             plot(obj.dt:obj.dt:obj.T,sqrt(sum((obj.u_d_decom.g+obj.u_d_decom.L+obj.u_d_decom.d).^2,2)));
