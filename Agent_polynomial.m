@@ -1,17 +1,12 @@
-classdef sinusoidAgent < Agent
+classdef Agent_polynomial < Agent
     %PINCIROLIAGENT Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
-        % PolyAgent properties
-        seperation_range    = 1;                    % Ideal seperation between agents
-        g_fun               = [];                   % Function handle for global pinciroli attractor  
-        g_fun2              = [];                   % Second function handle for conditional functions
-        g_cond              = 0;                    % Condition for second function handle
     end
     
     methods
-        function obj = sinusoidAgent(arena,id,pos,head)
+        function obj = Agent_polynomial(arena,id,pos,head)
             obj = obj@Agent(arena,id,pos,head);
 %             if ~isa(obj.g_fun,'function_handle')
 %                 a           = obj.v_max*obj.dt/(((obj.swarmSize*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
@@ -20,10 +15,10 @@ classdef sinusoidAgent < Agent
         end
         
         function v_d = calculate_vd(obj)
-            v_d = obj.sinusoidCalculation();
+            v_d = obj.polynomialCalculation();
         end
         
-        function v_d = sinusoidCalculation(obj)
+        function v_d = polynomialCalculation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
             eps     = obj.genome(1);
             q_i     = obj.pos' - obj.c_pos;                 % Vector of current position and c
@@ -43,16 +38,13 @@ classdef sinusoidAgent < Agent
                     q_ij    = q_i-(obj.neighbours{obj.t}(j,3:5) - obj.c_pos);                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
                     if q_ijn > 0
-                        L_i = L_i + obj.genome(2);
-                        for l=1:(length(obj.genome)-2)/3
-                            L_i = L_i + obj.genome(3+(l-1)*3) * sin(2*pi()*obj.genome(4+(l-1)*3) * (q_ijn/sigma) + 2*pi()*obj.genome(5+(l-1)*3)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0];
-                        end
+                        L_i     = L_i + 1 / q_ijn * sum((sigma/q_ijn).^(0:(length(obj.genome)-2)) .* obj.genome(2:end)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
                     end
                 end
-                L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents
+                L_i = L_i / size(obj.neighbours{obj.t},1);     % Average over nr. of agents
             end
-            u_d     = g_i + L_i;                  % Sum to find u_d
-            u_d_n   = sum(u_d.^2);
+            u_d = g_i + L_i;                  % Sum to find u_d
+            u_d_n = sum(u_d.^2);
             if u_d_n > obj.v_max
                 g_i = g_i ./ u_d_n * obj.v_max;
                 L_i = L_i ./ u_d_n * obj.v_max;
@@ -63,20 +55,16 @@ classdef sinusoidAgent < Agent
             else
                 d_i = -eps*(L_i+g_i);
             end
-            u_d                         = u_d + d_i;
-            obj.u_d_decom.g(obj.t,:)    = g_i;       % Save to array for plotting
-            obj.u_d_decom.L(obj.t,:)    = L_i;       % Save to array for plotting
-            obj.u_d_decom.d(obj.t,:)    = d_i;       % Save to array for plotting
-            v_d                         = u_d;       % Convert u_d to v_d
-            
+            u_d = u_d + d_i;
+            obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
+            obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
+            obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
+            v_d = u_d;                              % Convert u_d to v_d
         end
         
         function y = local_interaction(obj,x)
-            y       = obj.genome(2);
             sigma   = obj.seperation_range + obj.collision_range;
-            for l=1:(length(obj.genome)-2)/3
-                y = y + obj.genome(3+(l-1)*3) * sin(2*pi()*obj.genome(4+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(5+(l-1)*3));
-            end
+            y = 1 / x * sum((sigma/x).^(0:(length(obj.genome)-1)) .* obj.genome);
         end
         
         function plotAgentFunction(obj,figid)
@@ -85,9 +73,7 @@ classdef sinusoidAgent < Agent
             x=0:0.01:5;
             l = zeros(1,length(x));
             for i=1:length(x)
-                for s=1:(length(obj.genome)-1)/3
-                    l(i) = l(i) + obj.genome(2+(s-1)*3) * sin(2*pi()*obj.genome(3+(s-1)*3) * (x(i)/sigma) + 2*pi()*obj.genome(4+(s-1)*3));
-                end
+                l(i) = 1 / x(i) * sum((sigma/x(i)).^(0:(length(obj.genome)-1)) .* obj.genome);
             end
             subplot(1,2,1);
             plot(x,l);

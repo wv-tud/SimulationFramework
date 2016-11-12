@@ -153,19 +153,19 @@ classdef Arena < handle
                 head    = unifrnd(0,2*pi(),newAgents,1);
             end
             for i=1:obj.sinusoidAgents
-                obj.agents{cAgents+i} = sinusoidAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = Agent_sinusoid(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             for i=(obj.sinusoidAgents+1):(obj.sinusoidAgents+obj.polyAgents)
-                obj.agents{cAgents+i} = polyAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = Agent_polynomial(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             for i=(obj.sinusoidAgents+obj.polyAgents+1):(obj.sinusoidAgents+obj.polyAgents+obj.nnAgents)
-                obj.agents{cAgents+i} = simpleNNAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = Agent_simpleNN(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             for i=(obj.polyAgents+obj.sinusoidAgents+obj.nnAgents+obj.nnAgents+1):newAgents
-                obj.agents{cAgents+i} = PinciroliAgent(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
+                obj.agents{cAgents+i} = Agent_pinciroli(obj,cAgents+i,[pos(i,:) 10],[head(i) 0]); % Add agent
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             obj.nAgents = cAgents + newAgents;
@@ -277,8 +277,8 @@ classdef Arena < handle
                     obj.a_headings(1,i,:)   = obj.agents{i}.heading(t,:);
                 end
             end
-            headMap = reshape(meshgrid(obj.a_headings(t,:,1),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,1);
-            posMap  = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
+            headMap     = reshape(meshgrid(obj.a_headings(t,:,1),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,1);
+            posMap      = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
             rij(:,:,1)  = shiftdim(squeeze(posMap(:,:,1))',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
             rij(:,:,2)  = shiftdim(squeeze(posMap(:,:,2))',2)-(posMap(:,:,2));
             rij(:,:,3)  = shiftdim(squeeze(posMap(:,:,3))',2)-(posMap(:,:,3));
@@ -293,7 +293,7 @@ classdef Arena < handle
             end
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
             angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
-            %anglesZ     = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
+            %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
             neighbours  = (dAbs < obj.agents{1}.cam_range & abs(angles) < 0.5*obj.agents{1}.cam_fov); %& abs(anglesZ) < 0.5*obj.agents{1}.cam_fov); % Save neighbours based on selection ||rij|| > cam_range && abs(angle(rij,cam_dir)) < 1/2*FOV
             neighbours  = neighbours';
         end
@@ -305,22 +305,22 @@ classdef Arena < handle
             pos_update                  = zeros(obj.nAgents,3);
             tmpVel                      = squeeze(obj.a_velocities(max(obj.t-1,1),:,:));
             for i=1:indiRuns
-                pos_x_err = sp(:,1) - pos_update(:,1);
-                pos_y_err = sp(:,2) - pos_update(:,2);
-                %pos_z_err = sp(:,3) - pos_update(:,3);
-                speed_sp_x = pos_x_err .* guidance_indi_pos_gain;
-                speed_sp_y = pos_y_err .* guidance_indi_pos_gain;
+                pos_x_err   = sp(:,1) - pos_update(:,1);
+                pos_y_err   = sp(:,2) - pos_update(:,2);
+                %pos_z_err  = sp(:,3) - pos_update(:,3);
+                speed_sp_x  = pos_x_err .* guidance_indi_pos_gain;
+                speed_sp_y  = pos_y_err .* guidance_indi_pos_gain;
                 %speed_sp_z = pos_z_err * guidance_indi_pos_gain;
-                sp_accel_x = (speed_sp_x - tmpVel(:,1)) .* guidance_indi_speed_gain;
-                sp_accel_y = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
+                sp_accel_x  = (speed_sp_x - tmpVel(:,1)) .* guidance_indi_speed_gain;
+                sp_accel_y  = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
                 %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;
-                sp_accel_x = min(0.5,max(-0.5,(sp_accel_x)));
-                sp_accel_y = min(0.5,max(-0.5,(sp_accel_y)));
+                sp_accel_x  = min(0.5,max(-0.5,(sp_accel_x)));
+                sp_accel_y  = min(0.5,max(-0.5,(sp_accel_y)));
                 tmpVel(:,1) = tmpVel(:,1) + obj.dt .* 1./indiRuns .* sp_accel_x;
                 tmpVel(:,2) = tmpVel(:,2) + obj.dt .* 1./indiRuns .* sp_accel_y;
-                %tmpVel = tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
-                noise = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
-                pos_update = pos_update + tmpVel + noise;
+                %tmpVel(:,3)= tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
+                noise       = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
+                pos_update  = pos_update + tmpVel + noise;
             end
             obj.a_velocities(obj.t,:,:) = tmpVel;
         end

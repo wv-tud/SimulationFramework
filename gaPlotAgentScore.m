@@ -1,4 +1,4 @@
-function state = gaplotbestf(options,state,flag)
+function state = gaPlotAgentScore(options,state,flag)
 %GAPLOTBESTF Plots the best score and the mean score.
 %   STATE = GAPLOTBESTF(OPTIONS,STATE,FLAG) plots the best score as well
 %   as the mean of the scores.
@@ -18,7 +18,7 @@ end
 switch flag
     case 'init'
         hold on;
-        set(gca,'xlim',[0,options.MaxGenerations]);
+        set(gca,'xlim',[0,options.MaxGenerations+1]);
         xlabel('Generation','interp','none');
         ylabel('Fitness value','interp','none');
         plotBest = plot(state.Generation,min(state.Score),'.k');

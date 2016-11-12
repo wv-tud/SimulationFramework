@@ -1,17 +1,12 @@
-classdef polyAgent < Agent
+classdef Agent_pinciroli < Agent
     %PINCIROLIAGENT Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
-        % PolyAgent properties
-        seperation_range    = 1;                    % Ideal seperation between agents
-        g_fun               = [];                   % Function handle for global pinciroli attractor  
-        g_fun2              = [];                   % Second function handle for conditional functions
-        g_cond              = 0;                    % Condition for second function handle
     end
     
     methods
-        function obj = polyAgent(arena,id,pos,head)
+        function obj = Agent_pinciroli(arena,id,pos,head)
             obj = obj@Agent(arena,id,pos,head);
 %             if ~isa(obj.g_fun,'function_handle')
 %                 a           = obj.v_max*obj.dt/(((obj.swarmSize*(obj.collision_range+obj.seperation_range)^2*sqrt(3)/2)/pi()));
@@ -20,12 +15,13 @@ classdef polyAgent < Agent
         end
         
         function v_d = calculate_vd(obj)
-            v_d = obj.polynomialCalculation();
+            v_d = obj.scalableShapeFormation();
         end
         
-        function v_d = polynomialCalculation(obj)
+        function v_d = scalableShapeFormation(obj)
             sigma   = obj.seperation_range + obj.collision_range;
-            eps     = obj.genome(1);
+            e       = obj.genome(1);
+            eps     = obj.genome(2);
             q_i     = obj.pos' - obj.c_pos;                 % Vector of current position and c
             g_i     = obj.global_interaction(q_i);
 %             if isa(obj.g_fun2,'function_handle')
@@ -37,16 +33,19 @@ classdef polyAgent < Agent
 %             else
 %                 g_i     = feval(obj.g_fun,obj.t*obj.dt,q_i,obj.v_max*obj.dt);  % Gathering 
 %             end
-            L_i     = [0 0 0];                                                  % Lattice formation
+            L_i    = [0 0 0];                                                  % Lattice formation
             if ~isempty(obj.neighbours{obj.t})
+                %tLn     = 0;
                 for j=1:size(obj.neighbours{obj.t},1)
                     q_ij    = q_i-(obj.neighbours{obj.t}(j,3:5) - obj.c_pos);                          % Relative vector between agent i and j
                     q_ijn   = sqrt(q_ij(1)^2+q_ij(2)^2+q_ij(3)^2);                                                  % Normalised relative vector
-                    if q_ijn > 0
-                        L_i     = L_i + 1 / q_ijn * sum((sigma/q_ijn).^(0:(length(obj.genome)-2)) .* obj.genome(2:end)) * [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
-                    end
+                    %tLt     = tic;
+                    L_i     = L_i + 12*e/q_ijn*((sigma/q_ijn)^12-(sigma/q_ijn)^6)*[q_ij(1)/q_ijn q_ij(2)/q_ijn 0];  % Calculate Lattice formation
+                    %tLn     = tLn + toc(tLt);
                 end
-                L_i = L_i / size(obj.neighbours{obj.t},1);     % Average over nr. of agents
+                %obj.tL = (obj.tL * (obj.t-1) + toc(tLt)/length(obj.neighbours{obj.t})) / obj.t;
+                %fprintf('%0.10f\n', obj.tL);
+                L_i = L_i / length(obj.neighbours{obj.t});     % Average over nr. of agents
             end
             u_d = g_i + L_i;                  % Sum to find u_d
             u_d_n = sum(u_d.^2);
@@ -69,26 +68,7 @@ classdef polyAgent < Agent
         
         function y = local_interaction(obj,x)
             sigma   = obj.seperation_range + obj.collision_range;
-            y = 1 / x * sum((sigma/x).^(0:(length(obj.genome)-1)) .* obj.genome);
-        end
-        
-        function plotAgentFunction(obj,figid)
-            figure(figid);
-            sigma   = obj.seperation_range + obj.collision_range;
-            x=0:0.01:5;
-            l = zeros(1,length(x));
-            for i=1:length(x)
-                l(i) = 1 / x(i) * sum((sigma/x(i)).^(0:(length(obj.genome)-1)) .* obj.genome);
-            end
-            subplot(1,2,1);
-            plot(x,l);
-            axis([0 x(end) 0 2*obj.v_max]);
-            xlabel('Distance from agent [m]');
-            ylabel('Polynomial response [m/s]');
-            subplot(1,2,2);
-            plot(1:length(obj.genome),obj.genome,'o');
-            xlabel('Polynomial order');
-            ylabel('Coefficient');
+            y       = 12*obj.genome(1)/x*((sigma/x)^12-(sigma/x)^6);
         end
     end
     
