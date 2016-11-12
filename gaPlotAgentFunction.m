@@ -18,13 +18,13 @@ end
 [~,i] = min(state.Score);
 switch(agentType)
     case 'pinciroli'
-        tmp_agent = PinciroliAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
+        tmp_agent = Agent_pinciroli(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
     case 'polynomial'
-        tmp_agent = polyAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
+        tmp_agent = Agent_polynomial(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
     case 'sinusoid'
-        tmp_agent = sinusoidAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
+        tmp_agent = Agent_sinusoid(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
     case 'simpleNN'
-        tmp_agent       = simpleNNAgent(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
+        tmp_agent       = Agent_simpleNN(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
         tmp_net         = feedforwardnet([simPar.nnSize]);
         tmp_net         = configure(tmp_net, [(-tmp_agent.seperation_range - 0.3)/4 (4 -tmp_agent.seperation_range - 0.3)/4], [-1 1]);
         tmp_net         = setwb(tmp_net,state.Population(i,2:end));
