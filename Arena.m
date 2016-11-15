@@ -8,7 +8,7 @@ classdef Arena < handle
         typeName     = 'default';     % Defines arena type name
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 0.1;               % m/s
+        gustVelocity = 0.05;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -37,6 +37,7 @@ classdef Arena < handle
         circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
         noise_u;
         noise_v;
+        distance_cost = 0;
     end
     
     methods
@@ -268,6 +269,7 @@ classdef Arena < handle
 %             plot(gt,obj.noise_u);
 %             plot(gt,obj.noise_v);
 %             hold off;
+%             pause
         end
                 
         function [neighbours,dAbs] = detectNeighbours(obj,t)
@@ -283,7 +285,7 @@ classdef Arena < handle
             rij(:,:,2)  = shiftdim(squeeze(posMap(:,:,2))',2)-(posMap(:,:,2));
             rij(:,:,3)  = shiftdim(squeeze(posMap(:,:,3))',2)-(posMap(:,:,3));
             dAbs        = sqrt(rij(:,:,1).^2+rij(:,:,2).^2+rij(:,:,3).^2); % Calculate abs distance
-            dAbs        = dAbs + diag(ones(1,obj.nAgents))*1.5*obj.agents{1}.cam_range; % i==j -> agent can't see itself
+            dAbs        = dAbs + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % i==j -> agent can't see itself
             if t>1
                 col_mat     = find(sum(dAbs < obj.agents{1}.collision_range,2)>0); % Detect and save collisions
                 for i=1:length(col_mat)
@@ -291,6 +293,7 @@ classdef Arena < handle
                     obj.collisions(t,col_mat(i))            = 1; % Count total nr of collisions
                 end
             end
+            obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
             angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle

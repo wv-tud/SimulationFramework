@@ -69,11 +69,11 @@ classdef Agent < handle
                 phi                     = atan2(obj.u_d_decom.g(obj.t,2),obj.u_d_decom.g(obj.t,1));                           % Yaw angle of v_d
                 theta                   = atan2(obj.u_d_decom.g(obj.t,3),0);
             end
-            if ~isempty(obj.neighbours{obj.t})
-                q_ijn                   = sqrt((obj.pos(1) - obj.neighbours{obj.t}(:,3)).^2 + (obj.pos(2) - obj.neighbours{obj.t}(:,4)).^2);
-                nearest_neighbours      = sort(abs((obj.seperation_range + obj.collision_range)./q_ijn - 1));
-                obj.dist_cost           = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
-            end
+%             if ~isempty(obj.neighbours{obj.t})
+%                 q_ijn                   = sqrt((obj.pos(1) - obj.neighbours{obj.t}(:,3)).^2 + (obj.pos(2) - obj.neighbours{obj.t}(:,4)).^2);
+%                 nearest_neighbours      = sort(abs((obj.seperation_range + obj.collision_range)./q_ijn - 1));
+%                 obj.dist_cost           = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
+%             end
             obj.vel_cost            = obj.vel_cost + norm(v_d - obj.u_d_decom.g(obj.t,:)).^2;                             % Apply agent dynamics to desired velocity
         end
         
@@ -113,7 +113,7 @@ classdef Agent < handle
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.0 - 1 / (1 + exp(5 / bucket_radius * (norm(pos(1:2)) - bucket_radius)))) * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.0 - 1 / (1 + exp(8 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.5 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
         function plotVelocityComponents(obj,arena)

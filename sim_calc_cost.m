@@ -44,17 +44,22 @@ for s=1:simPar.trialSize
     % Calculate cost
     for j=1:simPar.nAgents
         velocityCost = velocityCost + uArena.agents{j}.vel_cost;
-        distanceCost = distanceCost + uArena.agents{j}.dist_cost;
+        %distanceCost = distanceCost + uArena.agents{j}.dist_cost;
     end
-    collisionCost = collisionCost + sum(sum(uArena.collisions));
+    uArena.agents{1}.plotGlobalAttraction(-7:0.1:7,-7:0.1:7);
+    distanceCost    = distanceCost  + uArena.distance_cost;
+    collisionCost   = collisionCost + sum(sum(uArena.collisions));
     % Create video (optional)
     if makeVideo
         createVideo(uArena);
     end
 end
 % Normalize cost wrt simulation parameters
-velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
-collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.nAgents * simPar.trialSize);
+velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+distanceCost    = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+%velocityCost
+%distanceCost
+%collisionCost
 totCost         = collisionCost + velocityCost + distanceCost;
 end
