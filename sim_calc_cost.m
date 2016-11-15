@@ -46,7 +46,7 @@ for s=1:simPar.trialSize
         velocityCost = velocityCost + uArena.agents{j}.vel_cost;
         %distanceCost = distanceCost + uArena.agents{j}.dist_cost;
     end
-    uArena.agents{1}.plotGlobalAttraction(-7:0.1:7,-7:0.1:7);
+    %uArena.agents{1}.plotGlobalAttraction(-7:0.1:7,-7:0.1:7);
     distanceCost    = distanceCost  + uArena.distance_cost;
     collisionCost   = collisionCost + sum(sum(uArena.collisions));
     % Create video (optional)
