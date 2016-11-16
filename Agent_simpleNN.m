@@ -30,7 +30,7 @@ classdef Agent_simpleNN < Agent
                         vL_i(j,:) = [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
                     end
                 end
-                nnL_i   = obj.net(obj.nnNormI(vq_ijn'))';
+                nnL_i   = obj.local_interaction(obj.nnNormI(vq_ijn'))';
                 L_i     = mean(obj.v_max .* [nnL_i nnL_i nnL_i] .* vL_i,1); % Average over nr. of agents    
             end
             u_d = g_i + L_i;                  % Sum to find u_d
@@ -56,7 +56,15 @@ classdef Agent_simpleNN < Agent
         end
         
         function y = local_interaction(obj,x)
-            y = obj.v_max * obj.net(obj.nnNormI(x));
+            %y = obj.v_max * obj.net(obj.nnNormI(x));
+            switch(obj.net.numLayers)
+                case 2 % One hidden layer
+                    y = obj.net.b{2} + obj.net.LW{2} * tansig(obj.net.IW{1} * x + obj.net.b{1});
+                case 3 % Two hidden layers
+                    y = obj.net.b{3} + obj.net.LW{3,2} * tansig(obj.net.LW{2,1} * tansig(obj.net.IW{1} * x + obj.net.b{1}) + obj.net.b{2});
+                otherwise
+                    disp('ERROR unrecognized nr of layers');
+            end
         end
     end
     

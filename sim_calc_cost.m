@@ -32,7 +32,12 @@ for s=1:simPar.trialSize
     switch(simPar.type)
         case 'simpleNN'
             simPar.net                  = setwb(simPar.net,genome(2:end));
-            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', @(x) simPar.net(x));
+            fakeNet                     = {};
+            fakeNet.numLayers           = simPar.net.numLayers;
+            fakeNet.IW                  = simPar.net.IW;
+            fakeNet.LW                  = simPar.net.LW;
+            fakeNet.b                   = simPar.net.b;
+            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
         otherwise
             uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
     end

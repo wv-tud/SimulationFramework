@@ -5,7 +5,8 @@ classdef Arena < handle
     properties
         % Simulation parameters
         name         = 'defaultArena';  % Arena name (used for movie file)
-        typeName     = 'default';     % Defines arena type name
+        typeName     = 'default';       % Defines arena type name
+        mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
         gustVelocity = 0.05;               % m/s
@@ -247,7 +248,7 @@ classdef Arena < handle
             wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
             wv          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
             C           = [ 1 0 ];
-            D           = [ 0 ];
+            D           = 0;
             % Noise u
             obj.noise_u = zeros(obj.nAgents, obj.T/obj.dt*round(32*obj.dt)-1);
             rat         = V / Lu;

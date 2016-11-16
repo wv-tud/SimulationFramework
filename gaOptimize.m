@@ -1,35 +1,4 @@
 global agentType;
-simulations = {};
-i = 1;
-% NN optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 35;
-simulations{i}.type     = 'simpleNN';           % 0.0024908491
-simulations{i}.nnSize   = 15;
-simulations{i}.LB       = -1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
-simulations{i}.UB       =  1 * ones(1,1 + 3*simulations{i}.nnSize + 1);
-i = i + 1;
-% Pinciroli optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'pinciroli';          % 0.0000121633
-simulations{i}.LB       = zeros(1,2);
-simulations{i}.UB       = [0.5 0.5];
-i = i + 1;
-% Polynomial optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'polynomial';
-simulations{i}.LB       = [0 -5*ones(1,13)];
-simulations{i}.UB       = [0.5  5*ones(1,13)];
-i = i + 1;
-% Sinusoid optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'sinusoid';
-simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
-i = i + 1;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
@@ -50,6 +19,43 @@ simPar = struct(...
     'nnSize',               [10 10]...
     );
 simPar.mission  = {'cyberzooBucket'};
+simulations = {};
+i = 1;
+% NN optimization
+simulations{i}          = struct();
+simulations{i}.popSize  = 35;
+simulations{i}.type     = 'simpleNN';           % 0.0024908491
+simulations{i}.nnSize   = [15 15];
+switch(length(simulations{i}.nnSize))
+    case 1
+        simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
+    case 2
+        simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
+end
+simulations{i}.LB       = -1 * ones(1,1 + simulations{i}.genomeNetLength);
+simulations{i}.UB       =  1 * ones(1,1 + simulations{i}.genomeNetLength);
+i = i + 1;
+% % Pinciroli optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'pinciroli';          % 0.0000121633
+% simulations{i}.LB       = zeros(1,2);
+% simulations{i}.UB       = [0.5 0.5];
+% i = i + 1;
+% % Polynomial optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'polynomial';
+% simulations{i}.LB       = [0 -5*ones(1,13)];
+% simulations{i}.UB       = [0.5  5*ones(1,13)];
+% i = i + 1;
+% % Sinusoid optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'sinusoid';
+% simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
+% simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
+% i = i + 1;
 %% Run all simulations
 x_store         = {};
 simPar_store    = {};
@@ -83,7 +89,7 @@ for si = 1:length(simulations)
             simPar.polyAgents       = 0;
             simPar.nnAgents         = 9;
             simPar.sinusoidAgents   = 0;
-            sampleGenome            = [0.1 rand(1,simPar.nnSize(1)+1 + sum(2 * simPar.nnSize))];
+            sampleGenome            = [0.1 rand(1,simulations{si}.genomeNetLength)];
             simPar.net              = feedforwardnet(simPar.nnSize);
             %simPar.net.layers{1}.transferFcn = 'logsig';
             %simPar.net.layers{2}.transferFcn = 'radbas';

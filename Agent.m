@@ -104,7 +104,7 @@ classdef Agent < handle
         end
         
         function y = local_interaction(x)
-            y       = 0;
+            y       = x;
         end
         
         function g = global_interaction(obj,x)
