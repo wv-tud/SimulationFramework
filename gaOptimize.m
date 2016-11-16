@@ -23,7 +23,7 @@ simulations = {};
 i = 1;
 % NN optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 35;
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'simpleNN';           % 0.0024908491
 simulations{i}.nnSize   = [15 15];
 switch(length(simulations{i}.nnSize))
@@ -32,8 +32,8 @@ switch(length(simulations{i}.nnSize))
     case 2
         simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
 end
-simulations{i}.LB       = -1 * ones(1,1 + simulations{i}.genomeNetLength);
-simulations{i}.UB       =  1 * ones(1,1 + simulations{i}.genomeNetLength);
+simulations{i}.LB       = -2 * ones(1,1 + simulations{i}.genomeNetLength);
+simulations{i}.UB       =  2 * ones(1,1 + simulations{i}.genomeNetLength);
 i = i + 1;
 % % Pinciroli optimization
 % simulations{i}          = struct();

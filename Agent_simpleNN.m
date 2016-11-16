@@ -63,8 +63,10 @@ classdef Agent_simpleNN < Agent
                 case 3 % Two hidden layers
                     y = obj.net.b{3} + obj.net.LW{3,2} * tansig(obj.net.LW{2,1} * tansig(obj.net.IW{1} * x + obj.net.b{1}) + obj.net.b{2});
                 otherwise
+                    y = zeros(1,length(x));
                     disp('ERROR unrecognized nr of layers');
             end
+            y = obj.v_max * y;
         end
     end
     
