@@ -30,8 +30,8 @@ classdef Agent_simpleNN < Agent
                         vL_i(j,:) = [q_ij(1)/q_ijn q_ij(2)/q_ijn 0]; % Calculate Lattice formation  
                     end
                 end
-                nnL_i   = obj.local_interaction(obj.nnNormI(vq_ijn'))';
-                L_i     = mean(obj.v_max .* [nnL_i nnL_i nnL_i] .* vL_i,1); % Average over nr. of agents    
+                nnL_i   = obj.local_interaction(vq_ijn')';
+                L_i     = mean(nnL_i .* vL_i,1); % Average over nr. of agents    
             end
             u_d = g_i + L_i;                  % Sum to find u_d
             u_d_n = sum(u_d.^2);
