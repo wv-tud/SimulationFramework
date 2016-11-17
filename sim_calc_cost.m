@@ -37,7 +37,12 @@ for s=1:simPar.trialSize
             fakeNet.IW                  = simPar.net.IW;
             fakeNet.LW                  = simPar.net.LW;
             fakeNet.b                   = simPar.net.b;
-            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
+            tmp_agent                   = Agent_simpleNN(uArena,0,[0 0 0],[0 0]);
+            tmp_agent.net               = fakeNet;
+            tmp_agent.v_max             = simPar.v_max;
+            resp                        = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
+            a                           = simPar.v_max / max(abs(resp));
+            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet, 'a', a);
         otherwise
             uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
     end

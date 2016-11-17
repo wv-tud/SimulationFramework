@@ -113,7 +113,7 @@ classdef Agent < handle
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.0 - 1 / (1 + exp(8 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.5 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.5 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
         function plotVelocityComponents(obj,arena)

@@ -2,7 +2,8 @@ classdef Agent_simpleNN < Agent
     %SIMPLENNAGENT Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties          
+    properties   
+        a       = 1; % Weight for neural output
     end
     
     methods
@@ -59,14 +60,14 @@ classdef Agent_simpleNN < Agent
             %y = obj.v_max * obj.net(obj.nnNormI(x));
             switch(obj.net.numLayers)
                 case 2 % One hidden layer
-                    y = obj.net.b{2} + obj.net.LW{2} * tansig(obj.net.IW{1} * obj.nnNormI(x) + obj.net.b{1});
+                    y = obj.net.b{2} + obj.net.LW{2} * radbas(obj.net.IW{1} * obj.nnNormI(x) + obj.net.b{1});
                 case 3 % Two hidden layers
-                    y = obj.net.b{3} + obj.net.LW{3,2} * tansig(obj.net.LW{2,1} * tansig(obj.net.IW{1} * obj.nnNormI(x) + obj.net.b{1}) + obj.net.b{2});
+                    y = obj.net.b{3} + obj.net.LW{3,2} * radbas(obj.net.LW{2,1} * radbas(obj.net.IW{1} * obj.nnNormI(x) + obj.net.b{1}) + obj.net.b{2});
                 otherwise
                     y = zeros(1,length(x));
                     disp('ERROR unrecognized nr of layers');
             end
-            y = obj.v_max * y;
+            y = obj.v_max * obj.a * y;
         end
     end
     

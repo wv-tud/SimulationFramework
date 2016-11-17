@@ -34,6 +34,9 @@ switch(agentType)
         fakeNet.LW          = tmp_net.LW;
         fakeNet.b           = tmp_net.b;
         tmp_agent.net       = fakeNet;
+        tmp_agent.v_max     = simPar.v_max;
+        resp                = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
+        tmp_agent.a         = simPar.v_max / max(abs(resp));
 end
 tmp_agent.genome            = state.Population(i,:);
 tmp_agent.seperation_range  = simPar.seperation_range;
