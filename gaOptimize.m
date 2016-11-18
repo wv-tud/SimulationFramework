@@ -15,27 +15,28 @@ simPar = struct(...
     'v_max',                2, ...
     'distance_cost',        1, ...
     'velocity_cost',        0, ...
-    'collision_cost',       0, ...
-    'nnSize',               [10 10]...
+    'collision_cost',       1e8, ...
+    'nnSize',               [10 10], ...
+    'boc',                  1 ...
     );
 simPar.mission  = {'cyberzooBucket'};
 simulations = {};
 i = 1;
 % NN optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 75;
+simulations{i}.popSize  = 150;
 simulations{i}.type     = 'simpleNN';           % 0.0024908491
-simulations{i}.nnSize   = [50];
+simulations{i}.nnSize   = [75];
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
     case 2
         simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
 end
-%simulations{i}.LB       = -15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
-%simulations{i}.UB       =  15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
+%simulations{i}.LB      = -15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
+%simulations{i}.UB      =  15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
 simulations{i}.LB       = -1 * ones(1,1 + simulations{i}.genomeNetLength);
-simulations{i}.UB       = 1 * ones(1,1 + simulations{i}.genomeNetLength);
+simulations{i}.UB       =  1 * ones(1,1 + simulations{i}.genomeNetLength);
 i = i + 1;
 % % Pinciroli optimization
 % simulations{i}          = struct();
@@ -87,9 +88,9 @@ for si = 1:length(simulations)
         case 'simpleNN'
             simPar.type             = 'simpleNN';
             simPar.nnSize           = simulations{si}.nnSize;
-            simPar.nAgents          = 9;
+            simPar.nAgents          = 20;
             simPar.polyAgents       = 0;
-            simPar.nnAgents         = 9;
+            simPar.nnAgents         = 20;
             simPar.sinusoidAgents   = 0;
             sampleGenome            = [0.1 rand(1,simulations{si}.genomeNetLength)];
             simPar.net              = feedforwardnet(simPar.nnSize);

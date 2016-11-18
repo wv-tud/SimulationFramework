@@ -23,6 +23,7 @@ for s=1:simPar.trialSize
     uArena.separation_range     = simPar.seperation_range;
     uArena.init                 = simPar.init;
     uArena.size                 = simPar.size;
+    uArena.boc                  = simPar.boc;
     % What type of agents
     uArena.nAgents              = simPar.nAgents;
     uArena.nnAgents             = simPar.nnAgents;
