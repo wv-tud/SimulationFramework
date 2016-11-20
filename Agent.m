@@ -60,7 +60,7 @@ classdef Agent < handle
             obj.vel                 = vel;
             obj.heading             = heading;
             obj.neighbours{obj.t}   = obj.buildNeighbourMatrix(neighbours, agent_positions);                     % Using detected neighbours build the matrix
-            v_d                     = obj.calculate_vd();
+            v_d                     = obj.calculate_vd(obj.neighbours{obj.t}(:,3:5));
             v_dhat                  = v_d/norm(v_d);
             if obj.swarmMode == 1
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
@@ -69,11 +69,6 @@ classdef Agent < handle
                 phi                     = atan2(obj.u_d_decom.g(obj.t,2),obj.u_d_decom.g(obj.t,1));                           % Yaw angle of v_d
                 theta                   = atan2(obj.u_d_decom.g(obj.t,3),0);
             end
-%             if ~isempty(obj.neighbours{obj.t})
-%                 q_ijn                   = sqrt((obj.pos(1) - obj.neighbours{obj.t}(:,3)).^2 + (obj.pos(2) - obj.neighbours{obj.t}(:,4)).^2);
-%                 nearest_neighbours      = sort(abs((obj.seperation_range + obj.collision_range)./q_ijn - 1));
-%                 obj.dist_cost           = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
-%             end
             obj.vel_cost            = obj.vel_cost + (norm(v_d) / norm(obj.u_d_decom.g(obj.t,:)) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
@@ -96,15 +91,44 @@ classdef Agent < handle
             end
         end
         
+        function v_d = calculate_vd(obj, neighbours)
+            L_i = deal([0 0 0]);        % Lattice formation
+            q_i = obj.pos' - obj.c_pos; % Vector of current position and c
+            g_i = obj.global_interaction(q_i);
+            if ~isempty(neighbours)
+                q_ij    = q_i - (neighbours - obj.c_pos);       % Relative vector between agent i and j
+                nMag    = sqrt(q_ij(:,1).^2 + q_ij(:,2).^2 + q_ij(:,3).^2);
+                nDir    = q_ij ./ nMag;
+                nL_i    = obj.local_interaction(nMag')';
+                L_i     = mean(nL_i .* nDir,1);                      % Average over nr. of agents 
+            end
+            u_d     = g_i + L_i;                                    % Sum to find u_d
+            u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2 + u_d(3)^2);
+            if u_d_n > obj.v_max
+                g_i = g_i / u_d_n * obj.v_max;
+                L_i = L_i / u_d_n * obj.v_max;
+                u_d = g_i + L_i;
+            end
+            if obj.t > 1
+                d_i = -obj.genome(1)*(L_i+g_i - (obj.u_d_decom.g(obj.t-1,:)+obj.u_d_decom.L(obj.t-1,:)+obj.u_d_decom.d(obj.t-1,:)));   % Calculate dissipative energy
+            else
+                d_i = -obj.genome(1)*(L_i+g_i);
+            end
+            v_d = u_d + d_i;
+            obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
+            obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
+            obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
+        end
+        
+        function y = local_interaction(x)
+            y       = x;
+        end
+        
         function X = getAgentFunction(obj,x)
             X       = zeros(size(x));
             for r=1:length(x)
                 X(r)    = obj.local_interaction(x(r));
             end
-        end
-        
-        function y = local_interaction(x)
-            y       = x;
         end
         
         function g = global_interaction(obj,x)
