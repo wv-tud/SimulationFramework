@@ -74,7 +74,7 @@ classdef Agent < handle
 %                 nearest_neighbours      = sort(abs((obj.seperation_range + obj.collision_range)./q_ijn - 1));
 %                 obj.dist_cost           = obj.dist_cost + mean(nearest_neighbours(1:min(length(obj.neighbours{obj.t}(:,1)),3)).^2);
 %             end
-            obj.vel_cost            = obj.vel_cost + norm(v_d - obj.u_d_decom.g(obj.t,:)).^2;                             % Apply agent dynamics to desired velocity
+            obj.vel_cost            = obj.vel_cost + (norm(v_d) / norm(obj.u_d_decom.g(obj.t,:)) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions)

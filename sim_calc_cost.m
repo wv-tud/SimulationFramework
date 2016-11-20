@@ -1,4 +1,4 @@
-function [ totCost ] = sim_calc_cost( simPar, genome, makeVideo )
+function [ totCost, costStruct, uArena ] = sim_calc_cost( simPar, genome, makeVideo )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
@@ -38,11 +38,12 @@ for s=1:simPar.trialSize
             fakeNet.IW                  = simPar.net.IW;
             fakeNet.LW                  = simPar.net.LW;
             fakeNet.b                   = simPar.net.b;
-            tmp_agent                   = Agent_simpleNN(uArena,0,[0 0 0],[0 0]);
-            tmp_agent.net               = fakeNet;
-            tmp_agent.v_max             = simPar.v_max;
-            resp                        = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
-            a                           = simPar.v_max / max(abs(resp));
+%             tmp_agent                   = Agent_simpleNN(uArena,0,[0 0 0],[0 0]);
+%             tmp_agent.net               = fakeNet;
+%             tmp_agent.v_max             = simPar.v_max;
+%             resp                        = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
+%             a                           = simPar.v_max / max(abs(resp));
+            a = 1;
             uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet, 'a', a);
         otherwise
             uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
@@ -67,10 +68,11 @@ for s=1:simPar.trialSize
 end
 % Normalize cost wrt simulation parameters
 velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+distanceCost    = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.fps * simPar.trialSize);
 collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-%velocityCost
-%distanceCost
-%collisionCost
-totCost         = collisionCost + velocityCost + distanceCost;
+costStruct      = struct();
+costStruct.velocityCost     = velocityCost;
+costStruct.distanceCost     = distanceCost;
+costStruct.collisionCost    = collisionCost;
+totCost                     = collisionCost + velocityCost + distanceCost;
 end

@@ -294,7 +294,13 @@ classdef Arena < handle
                     obj.collisions(t,col_mat(i))            = 1; % Count total nr of collisions
                 end
             end
-            obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
+            %obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
+            % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
+            sigma                                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+            dCostMat                                    = (1-eye(obj.nAgents)).*dAbs + eye(obj.nAgents).*sigma;
+            dCostMat(dAbs > obj.agents{1}.cam_range)    = sigma;
+            obj.distance_cost                           = obj.distance_cost + 1/(obj.nAgents+1) * sum(sum((dCostMat-sigma).^2));
+            
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
             angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
