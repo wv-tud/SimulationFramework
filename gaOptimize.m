@@ -10,6 +10,8 @@ simPar = struct(...
     'nnAgents',             0, ...  % Simple neural network agets
     'sinusoidAgents',       0, ...  % Sinusoid agents
     'seperation_range',     1.75, ...
+    'collision_range',      0.3, ...
+    'camera_range',         4.0, ...
     'init',                 'random', ...
     'size',                 [15 15], ...
     'v_max',                1.4, ...
@@ -103,7 +105,7 @@ for si = 1:length(simulations)
             simPar.type             = 'simpleNN';
             simPar.nnSize           = simulations{si}.nnSize;
             simPar.polyAgents       = 0;
-            simPar.nnAgents         = 20;
+            simPar.nnAgents         = 3;
             simPar.sinusoidAgents   = 0;
             simPar.nAgents          = simPar.nnAgents;
             sampleGenome            = [0.1 rand(1,simulations{si}.genomeNetLength)];
@@ -112,6 +114,11 @@ for si = 1:length(simulations)
             simPar.net.i_OB         = OB;
             simPar.net.i_IW         = IW;
             simPar.net.i_LW         = LW;
+    end
+    %% Check lattice ratio (also checked inside sim_calc_cost but throws warnings)
+    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
+        simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
+        fprintf('WARNING: lattice ratio >= 2, limiting camera range to %.2fm\n', simPar.camera_range);
     end
     %% Do a sample simulation to get an estimate of the time
     pT              = tic;

@@ -8,7 +8,7 @@ classdef visualArena < handle
         p_fov       = 0;                    % Print field of view line of every agent
         p_head      = 2;                    % Print heading line: 0=off;1=range;2=circle
         p_circ      = 0;                    % Print circle of 0.5m around every agent
-        p_label     = 0;                    % Print agent id
+        p_label     = 1;                    % Print agent id
         p_mov_axe   = 0;                    % Print using moving axes
         p_axe_lim   = [-52.5 52.5 -34 34];  % Limits zooming on the axe [xlim ylim]
         diskType    = 'hdd';                % Whether to write to HDD or SSD
@@ -95,7 +95,7 @@ classdef visualArena < handle
             obj.fig_table{1}    = figureTable(0,240,obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
             obj.fig_table{2}    = figureTable(0,150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
             obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
-            axis square;
+            axis equal;
             grid minor;
             set(obj.fig,'PaperPositionMode','manual');
             set(obj.fig,'PaperPosition',[100 100 obj.resolution(1) obj.resolution(2)]);
@@ -138,7 +138,7 @@ classdef visualArena < handle
             if obj.frame_save~=1
                 close(obj.movie);
             end
-            close(obj.fig);
+            %close(obj.fig);
             filename = obj.moviefile;
         end
         

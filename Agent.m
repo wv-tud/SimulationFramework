@@ -13,7 +13,7 @@ classdef Agent < handle
         % Camera properties
         cam_dir             = [0 -30/180*pi()];     % Camera direction [radian yaw, radian pitch]
         cam_fov             = 152/180*pi();         % Camera FOV [radian]
-        cam_range           = 5;                    % Camera range [m]
+        cam_range           = 4;                    % Camera range [m]
         cam_acc             = 0.85;                 % Accuracy of Camera
         % Non-optional properties
         neighbours          = {};                   % Structure to save neighbours
@@ -100,7 +100,7 @@ classdef Agent < handle
                 nMag    = sqrt(q_ij(:,1).^2 + q_ij(:,2).^2 + q_ij(:,3).^2);
                 nDir    = q_ij ./ nMag;
                 nL_i    = obj.local_interaction(nMag')';
-                L_i     = mean(nL_i .* nDir,1);                      % Average over nr. of agents 
+                L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents 
             end
             u_d     = g_i + L_i;                                    % Sum to find u_d
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2 + u_d(3)^2);
@@ -137,7 +137,7 @@ classdef Agent < handle
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.5 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
         function plotVelocityComponents(obj,arena)

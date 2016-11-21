@@ -298,9 +298,9 @@ classdef Arena < handle
             %obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
             if obj.t > 0
-                sigma                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                sigma = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
                 for i=1:obj.nAgents
-                    dCostMat                    = dAbs(i, dAbs(i,:) < obj.agents{1}.cam_range);
+                    dCostMat                    = dAbs(i,dAbs(i,:) < obj.agents{1}.cam_range);
                     dCostnAgents                = length(dCostMat);
                     obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                 end

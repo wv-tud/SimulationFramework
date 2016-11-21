@@ -30,6 +30,10 @@ for s=1:simPar.trialSize
     uArena.polyAgents           = simPar.polyAgents;
     uArena.sinusoidAgents       = simPar.sinusoidAgents;
     % Simulation dependant options
+    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
+        simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
+        fprintf('WARNING: lattice ratio >= 2, limiting camera range to %9.2f\n', simPar.camera_range);
+    end  
     switch(simPar.type)
         case 'simpleNN'
             fakeNet             = struct();
