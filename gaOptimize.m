@@ -3,7 +3,7 @@ global agentType;
 simPar = struct(...
     'type',                 '',...
     'simTime',              15, ...
-    'trialSize',            2, ...
+    'trialSize',            3, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -46,10 +46,10 @@ end
 simulations{i}.LB       = [0  -1 * ones(1, simulations{i}.genomeNetLength)];
 simulations{i}.UB       = [0.5 1 * ones(1, simulations{i}.genomeNetLength)];
 
-simulations{i}.LB(IB)   = -3;
-simulations{i}.UB(IB)   =  3;
-simulations{i}.LB(OB)   = -4;
-simulations{i}.UB(OB)   =  4;
+simulations{i}.LB(IB+1)   = -3;
+simulations{i}.UB(IB+1)   =  3;
+simulations{i}.LB(OB+1)   = -4;
+simulations{i}.UB(OB+1)   =  4;
 
 i = i + 1;
 % % Pinciroli optimization
