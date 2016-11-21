@@ -87,25 +87,25 @@ for si = 1:length(simulations)
             sampleGenome            = [0.1 0.01];
         case 'polynomial'
             simPar.type             = 'polynomial';
-            simPar.nAgents          = 9;
             simPar.polyAgents       = 9;
+            simPar.nAgents          = simPar.polyAgents;
             simPar.nnAgents         = 0;
             simPar.sinusoidAgents   = 0;
             sampleGenome            = [0.1 0 0 0 0 0 0 -0.12 0 0 0 0 0 0.12];
         case 'sinusoid'
             simPar.type             = 'sinusoid';
-            simPar.nAgents          = 9;
             simPar.polyAgents       = 0;
             simPar.nnAgents         = 0;
             simPar.sinusoidAgents   = 9;
+            simPar.nAgents          = simPar.sinusoidAgents;
             sampleGenome            = [0.1 -0.0267 -5.4729 0.1886 0.7875 0.9981 34.0776 0.6417 1.3918 37.7451 0.9187 1.4766 15.6458 0.9927];
         case 'simpleNN'
             simPar.type             = 'simpleNN';
             simPar.nnSize           = simulations{si}.nnSize;
-            simPar.nAgents          = 5;
             simPar.polyAgents       = 0;
-            simPar.nnAgents         = 5;
+            simPar.nnAgents         = 20;
             simPar.sinusoidAgents   = 0;
+            simPar.nAgents          = simPar.nnAgents;
             sampleGenome            = [0.1 rand(1,simulations{si}.genomeNetLength)];
             simPar.net              = struct();
             simPar.net.i_IB         = IB;
