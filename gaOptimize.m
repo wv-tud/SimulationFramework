@@ -43,8 +43,8 @@ switch(length(simulations{i}.nnSize))
 end
 %simulations{i}.LB      = -15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
 %simulations{i}.UB      =  15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
-simulations{i}.LB       = -1 * ones(1,1 + simulations{i}.genomeNetLength);
-simulations{i}.UB       =  1 * ones(1,1 + simulations{i}.genomeNetLength);
+simulations{i}.LB       = [0  -1 * ones(1, simulations{i}.genomeNetLength)];
+simulations{i}.UB       = [0.5 1 * ones(1, simulations{i}.genomeNetLength)];
 
 simulations{i}.LB(IB)   = -3;
 simulations{i}.UB(IB)   =  3;

@@ -299,8 +299,12 @@ classdef Arena < handle
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
             if obj.t > 0
                 sigma                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
-                dCostMat                    = dAbs(dAbs < obj.agents{1}.cam_range);
-                obj.distance_cost(obj.t)    = 1/(obj.nAgents+1) * sum(sum((dCostMat-sigma).^2));
+                obj.distance_cost(obj.t)    = 0;
+                for i=1:obj.nAgents
+                    dCostMat                    = dAbs(dAbs(i,:) < obj.agents{1}.cam_range);
+                    dCostnAgents                = length(dCostMat);
+                    obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum(sum((dCostMat-sigma).^2));
+                end
             end
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
             angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
