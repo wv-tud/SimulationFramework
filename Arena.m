@@ -299,12 +299,9 @@ classdef Arena < handle
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
             if obj.t > 0
                 sigma                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
-                dAbs
                 for i=1:obj.nAgents
                     dCostMat                    = dAbs(i, dAbs(i,:) < obj.agents{1}.cam_range);
                     dCostnAgents                = length(dCostMat);
-                    dCostMat
-                    pause
                     obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum(sum((dCostMat-sigma).^2));
                 end
             end
