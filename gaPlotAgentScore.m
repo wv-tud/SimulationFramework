@@ -25,16 +25,17 @@ switch flag
         set(plotBest,'Tag','gaplotbestf');
         plotMean = plot(state.Generation,meanf(state.Score),'.b');
         set(plotMean,'Tag','gaplotmean');
-        title(['Best: ',' Mean: '],'interp','none')
+        title(['Best: ',' Mean: '],'interp','none');
+        grid minor;
     case 'iter'
-        best = min(state.Score);
-        m    = meanf(state.Score);
-        plotBest = findobj(get(gca,'Children'),'Tag','gaplotbestf');
-        plotMean = findobj(get(gca,'Children'),'Tag','gaplotmean');
-        newX = [get(plotBest,'Xdata') state.Generation];
-        newY = [get(plotBest,'Ydata') best];
+        best        = min(state.Score);
+        m           = meanf(state.Score);
+        plotBest    = findobj(get(gca,'Children'),'Tag','gaplotbestf');
+        plotMean    = findobj(get(gca,'Children'),'Tag','gaplotmean');
+        newX        = [get(plotBest,'Xdata') state.Generation];
+        newY        = [get(plotBest,'Ydata') best];
         set(plotBest,'Xdata',newX, 'Ydata',newY);
-        newY = [get(plotMean,'Ydata') m];
+        newY        = [get(plotMean,'Ydata') m];
         set(plotMean,'Xdata',newX, 'Ydata',newY);
         set(get(gca,'Title'),'String',sprintf('Best: %g Mean: %g',best,m));
         set(gca,'xlim',[0,state.Generation]);
