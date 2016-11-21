@@ -66,7 +66,7 @@ for s=1:simPar.trialSize
 end
 % Normalize cost wrt simulation parameters
 velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize);
+distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize * simPar.nAgents);
 collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 costStruct      = struct();
 costStruct.velocityCost     = velocityCost;

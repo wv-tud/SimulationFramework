@@ -302,7 +302,7 @@ classdef Arena < handle
                 for i=1:obj.nAgents
                     dCostMat                    = dAbs(i, dAbs(i,:) < obj.agents{1}.cam_range);
                     dCostnAgents                = length(dCostMat);
-                    obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum(sum((dCostMat-sigma).^2));
+                    obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                 end
             end
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
