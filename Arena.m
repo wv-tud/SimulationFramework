@@ -38,7 +38,7 @@ classdef Arena < handle
         circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
         noise_u;
         noise_v;
-        distance_cost = 0;
+        distance_cost = [];
     end
     
     methods
@@ -74,8 +74,9 @@ classdef Arena < handle
             % Start simulation
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
-            t_ar    = zeros(obj.T/obj.dt,1);      % Array containing timestep calculation time
-            nT      = obj.T/obj.dt;             % Number of timestep iterations
+            nT                  = obj.T/obj.dt; % Number of timestep iterations
+            t_ar                = zeros(nT,1);  % Array containing timestep calculation time
+            obj.distance_cost   = zeros(nT,1);
             if obj.print>0 
                 iterT = tic;  % Start timer for first iteration
             end
@@ -296,11 +297,11 @@ classdef Arena < handle
             end
             %obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
-            sigma                                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
-            dCostMat                                    = (1-eye(obj.nAgents)).*dAbs + eye(obj.nAgents).*sigma;
-            dCostMat(dAbs > obj.agents{1}.cam_range)    = sigma;
-            obj.distance_cost                           = obj.distance_cost + 1/(obj.nAgents+1) * sum(sum((dCostMat-sigma).^2));
-            
+            if obj.t > 0
+                sigma                       = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                dCostMat                    = dAbs(dAbs < obj.agents{1}.cam_range);
+                obj.distance_cost(obj.t)    = 1/(obj.nAgents+1) * sum(sum((dCostMat-sigma).^2));
+            end
             angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
             angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle

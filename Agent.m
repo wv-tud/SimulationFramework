@@ -13,7 +13,7 @@ classdef Agent < handle
         % Camera properties
         cam_dir             = [0 -30/180*pi()];     % Camera direction [radian yaw, radian pitch]
         cam_fov             = 152/180*pi();         % Camera FOV [radian]
-        cam_range           = 4;                    % Camera range [m]
+        cam_range           = 5;                    % Camera range [m]
         cam_acc             = 0.85;                 % Accuracy of Camera
         % Non-optional properties
         neighbours          = {};                   % Structure to save neighbours

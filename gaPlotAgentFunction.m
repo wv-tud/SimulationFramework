@@ -24,19 +24,15 @@ switch(agentType)
     case 'sinusoid'
         tmp_agent = Agent_sinusoid(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
     case 'simpleNN'
+        fakeNet             = struct();
+        fakeNet.numLayers   = length(simPar.nnSize);
+        fakeNet.IW          = state.Population(i,simPar.net.i_IW+1);
+        fakeNet.LW          = state.Population(i,simPar.net.i_LW+1);
+        fakeNet.IB          = state.Population(i,simPar.net.i_IB+1);
+        fakeNet.OB          = state.Population(i,simPar.net.i_OB+1);
         tmp_agent           = Agent_simpleNN(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
-        tmp_net             = feedforwardnet([simPar.nnSize]);
-        tmp_net             = configure(tmp_net, [(-tmp_agent.seperation_range - 0.3)/4 (4 -tmp_agent.seperation_range - 0.3)/4], [-1 1]);
-        tmp_net             = setwb(tmp_net,state.Population(i,2:end));
-        fakeNet             = {};
-        fakeNet.numLayers   = tmp_net.numLayers;
-        fakeNet.IW          = tmp_net.IW;
-        fakeNet.LW          = tmp_net.LW;
-        fakeNet.b           = tmp_net.b;
         tmp_agent.net       = fakeNet;
         tmp_agent.v_max     = simPar.v_max;
-%         resp                = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
-%         tmp_agent.a         = simPar.v_max / max(abs(resp));
 end
 tmp_agent.genome            = state.Population(i,:);
 tmp_agent.seperation_range  = simPar.seperation_range;

@@ -32,21 +32,15 @@ for s=1:simPar.trialSize
     % Simulation dependant options
     switch(simPar.type)
         case 'simpleNN'
-            simPar.net                  = setwb(simPar.net,genome(2:end));
-            fakeNet                     = {};
-            fakeNet.numLayers           = simPar.net.numLayers;
-            fakeNet.IW                  = simPar.net.IW;
-            fakeNet.LW                  = simPar.net.LW;
-            fakeNet.b                   = simPar.net.b;
-%             tmp_agent                   = Agent_simpleNN(uArena,0,[0 0 0],[0 0]);
-%             tmp_agent.net               = fakeNet;
-%             tmp_agent.v_max             = simPar.v_max;
-%             resp                        = tmp_agent.getAgentFunction(0:0.01:tmp_agent.cam_range);
-%             a                           = simPar.v_max / max(abs(resp));
-            a = 1;
-            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet, 'a', a);
+            fakeNet             = struct();
+            fakeNet.numLayers   = length(simPar.nnSize);
+            fakeNet.IW          = genome(simPar.net.i_IW+1);
+            fakeNet.LW          = genome(simPar.net.i_LW+1);
+            fakeNet.IB          = genome(simPar.net.i_IB+1);
+            fakeNet.OB          = genome(simPar.net.i_OB+1);
+            uArena.agent_conf   = struct('v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
         otherwise
-            uArena.agent_conf           = struct('v_max',simPar.v_max, 'genome', genome);
+            uArena.agent_conf   = struct('v_max',simPar.v_max, 'genome', genome);
     end
     % Save/Display options
     uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
@@ -59,7 +53,11 @@ for s=1:simPar.trialSize
         %distanceCost = distanceCost + uArena.agents{j}.dist_cost;
     end
     %uArena.agents{1}.plotGlobalAttraction(-7:0.1:7,-7:0.1:7);
-    distanceCost    = distanceCost  + uArena.distance_cost;
+    dcX             = 0:1/(simPar.simTime * simPar.fps):1;
+    dcX(1)          = [];
+    dcW             = sqrt(1-(dcX-1).^2);
+    dcW             = dcW' / sum(dcW);
+    distanceCost    = distanceCost  + sum(dcW .* uArena.distance_cost);
     collisionCost   = collisionCost + sum(sum(uArena.collisions));
     % Create video (optional)
     if makeVideo
@@ -68,7 +66,7 @@ for s=1:simPar.trialSize
 end
 % Normalize cost wrt simulation parameters
 velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost * distanceCost / (simPar.simTime * simPar.fps * simPar.trialSize);
+distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize);
 collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 costStruct      = struct();
 costStruct.velocityCost     = velocityCost;

@@ -2,8 +2,8 @@ global agentType;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
-    'simTime',              30, ...
-    'trialSize',            5, ...
+    'simTime',              15, ...
+    'trialSize',            2, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -14,7 +14,7 @@ simPar = struct(...
     'size',                 [15 15], ...
     'v_max',                1.4, ...
     'distance_cost',        1, ...
-    'velocity_cost',        2, ...
+    'velocity_cost',        0.25, ...
     'collision_cost',       1e8, ...
     'nnSize',               [10 10], ...
     'boc',                  1 ...
@@ -24,41 +24,55 @@ simulations             = {};
 i                       = 1;
 % NN optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 50;
+simulations{i}.popSize  = 35;
 simulations{i}.type     = 'simpleNN';
 simulations{i}.nnSize   = 25;
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
+        IB = 1:simulations{i}.nnSize;
+        OB = IB(end)+1;
+        IW = OB(end)+1:OB(end)+simulations{i}.nnSize;
+        LW = IW(end)+1:simulations{i}.genomeNetLength;
     case 2
         simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
+        IB = 1:(simulations{i}.nnSize(1) + simulations{i}.nnSize(2));
+        OB = IB(end)+1;
+        IW = OB(end)+1:(OB(end) + simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2));
+        LW = IW(end)+1:simulations{i}.genomeNetLength;
 end
 %simulations{i}.LB      = -15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
 %simulations{i}.UB      =  15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
 simulations{i}.LB       = -1 * ones(1,1 + simulations{i}.genomeNetLength);
 simulations{i}.UB       =  1 * ones(1,1 + simulations{i}.genomeNetLength);
+
+simulations{i}.LB(IB)   = -3;
+simulations{i}.UB(IB)   =  3;
+simulations{i}.LB(OB)   = -4;
+simulations{i}.UB(OB)   =  4;
+
 i = i + 1;
-% Pinciroli optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'pinciroli';          
-simulations{i}.LB       = zeros(1,2);
-simulations{i}.UB       = [0.5 0.5];
-i = i + 1;
-% Polynomial optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'polynomial';
-simulations{i}.LB       = [0 -5*ones(1,13)];
-simulations{i}.UB       = [0.5  5*ones(1,13)];
-i = i + 1;
-% Sinusoid optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'sinusoid';
-simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
-i = i + 1;
+% % Pinciroli optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'pinciroli';          
+% simulations{i}.LB       = zeros(1,2);
+% simulations{i}.UB       = [0.5 0.5];
+% i = i + 1;
+% % Polynomial optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'polynomial';
+% simulations{i}.LB       = [0 -5*ones(1,13)];
+% simulations{i}.UB       = [0.5  5*ones(1,13)];
+% i = i + 1;
+% % Sinusoid optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'sinusoid';
+% simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
+% simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
+% i = i + 1;
 %% Run all simulations
 x_store         = cell(length(simulations),1);
 simPar_store    = cell(length(simulations),1);
@@ -88,16 +102,16 @@ for si = 1:length(simulations)
         case 'simpleNN'
             simPar.type             = 'simpleNN';
             simPar.nnSize           = simulations{si}.nnSize;
-            simPar.nAgents          = 20;
+            simPar.nAgents          = 5;
             simPar.polyAgents       = 0;
-            simPar.nnAgents         = 20;
+            simPar.nnAgents         = 5;
             simPar.sinusoidAgents   = 0;
             sampleGenome            = [0.1 rand(1,simulations{si}.genomeNetLength)];
-            simPar.net              = feedforwardnet(simPar.nnSize);
-            %simPar.net.layers{1}.transferFcn = 'logsig';
-            %simPar.net.layers{2}.transferFcn = 'radbas';
-            %simPar.net.layers{3}.transferFcn = 'purelin';
-            simPar.net              = configure(simPar.net, [(-simPar.seperation_range - 0.3)/4 (4 -simPar.seperation_range - 0.3)/4], [-1 1]);
+            simPar.net              = struct();
+            simPar.net.i_IB         = IB;
+            simPar.net.i_OB         = OB;
+            simPar.net.i_IW         = IW;
+            simPar.net.i_LW         = LW;
     end
     %% Do a sample simulation to get an estimate of the time
     pT              = tic;
@@ -113,7 +127,7 @@ for si = 1:length(simulations)
         'PlotFcn',{@gaPlotAgentScore @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag)},...
         'UseParallel',1,...
 ...%        'OutputFcn',@gaOutputFun,...
-        'CrossoverFraction',0.7...
+        'CrossoverFraction',0.8...
      );
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
@@ -123,8 +137,10 @@ for si = 1:length(simulations)
     simPar_store{si}    = simPar;
 end
 %% Create videos
+uArena_store        = cell(length(simulations),1);
+costStruct_store    = cell(length(simulations),1);
 for i = 1:length(simulations)
     close all;
     agentType = simPar_store{i}.type;
-    sim_calc_cost(simPar_store{i}, x_store{i}, true);
+    [~,costStruct_store{i},uArena_store{i}] = sim_calc_cost(simPar_store{i}, x_store{i}, true);
 end
