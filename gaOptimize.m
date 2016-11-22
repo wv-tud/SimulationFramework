@@ -2,8 +2,8 @@ global agentType;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
-    'simTime',              30, ...
-    'trialSize',            5, ...
+    'simTime',              20, ...
+    'trialSize',            3, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -16,7 +16,7 @@ simPar = struct(...
     'size',                 [15 15], ...
     'v_max',                1.4, ...
     'distance_cost',        1, ...
-    'velocity_cost',        0.25, ...
+    'velocity_cost',        0, ...
     'collision_cost',       1e8, ...
     'nnSize',               [10 10], ...
     'boc',                  1 ...
@@ -28,7 +28,7 @@ i                       = 1;
 simulations{i}          = struct();
 simulations{i}.popSize  = 75;
 simulations{i}.type     = 'simpleNN';
-simulations{i}.nnSize   = 25;
+simulations{i}.nnSize   = 15;
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
@@ -80,14 +80,14 @@ for si = 1:length(simulations)
     switch simulations{si}.type 
         case 'pinciroli'
             simPar.type             = 'pinciroli';
-            simPar.nAgents          = 9;
+            simPar.nAgents          = 20;
             simPar.polyAgents       = 0;
             simPar.nnAgents         = 0;
             simPar.sinusoidAgents   = 0;
             sampleGenome            = [0.1 0.01];
         case 'polynomial'
             simPar.type             = 'polynomial';
-            simPar.polyAgents       = 9;
+            simPar.polyAgents       = 20;
             simPar.nAgents          = simPar.polyAgents;
             simPar.nnAgents         = 0;
             simPar.sinusoidAgents   = 0;
@@ -96,7 +96,7 @@ for si = 1:length(simulations)
             simPar.type             = 'sinusoid';
             simPar.polyAgents       = 0;
             simPar.nnAgents         = 0;
-            simPar.sinusoidAgents   = 9;
+            simPar.sinusoidAgents   = 20;
             simPar.nAgents          = simPar.sinusoidAgents;
             sampleGenome            = [0.1 -0.0267 -5.4729 0.1886 0.7875 0.9981 34.0776 0.6417 1.3918 37.7451 0.9187 1.4766 15.6458 0.9927];
         case 'simpleNN'
