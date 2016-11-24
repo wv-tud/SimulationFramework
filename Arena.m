@@ -316,6 +316,7 @@ classdef Arena < handle
         function pos_update = indiGuidance(obj, sp)
             guidance_indi_pos_gain      = 0.5;
             guidance_indi_speed_gain    = 1.8;
+            sp                          = 1/guidance_indi_pos_gain * sp;
             indiRuns                    = round(obj.indiRate*obj.dt);
             pos_update                  = zeros(obj.nAgents,3);
             tmpVel                      = reshape(obj.a_velocities(max(obj.t-1,1),:,:),[obj.nAgents 3]);

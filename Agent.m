@@ -70,7 +70,7 @@ classdef Agent < handle
                 phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of v_d
                 theta                   = atan2(g_d(3),0);
             end
-            obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
+            %obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
