@@ -9,7 +9,7 @@ classdef Arena < handle
         mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 0.05;               % m/s
+        gustVelocity = 10.0;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -39,6 +39,7 @@ classdef Arena < handle
         noise_u;
         noise_v;
         distance_cost = [];
+        indiRate        = 512;
     end
     
     methods
@@ -245,21 +246,21 @@ classdef Arena < handle
             V           = 0.5 * obj.agents{1}.v_max;
             Lu          = 1 / (0.177 + 0.000823*1)^(1.2);
             Lv          = Lu; % 0.5 * Lu?
-            gt          = 0:obj.dt/round(32*obj.dt):(obj.T - obj.dt);
-            wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
-            wv          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(32*obj.dt));
+            gt          = 0:obj.dt/round(obj.indiRate*obj.dt):(obj.T - obj.dt);
+            wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(obj.indiRate*obj.dt));
+            wv          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(obj.indiRate*obj.dt));
             C           = [ 1 0 ];
             D           = 0;
             % Noise u
-            obj.noise_u = zeros(obj.nAgents, obj.T/obj.dt*round(32*obj.dt)-1);
+            obj.noise_u = zeros(obj.nAgents,length(gt));
             rat         = V / Lu;
             A           = [ 0 1; -rat^2 -2*rat ];
             B           = sigma_u * [ sqrt(3*rat); (1- 2 * sqrt(3)) * sqrt((rat^3)) ];
             for i = 1:obj.nAgents
-                obj.noise_u(i,:)  = lsim(A, B, C, D, wu(i,:), gt);
+               obj.noise_u(i,:)  = lsim(A, B, C, D, wu(i,:), gt);
             end
             % Noise v
-            obj.noise_v = zeros(obj.nAgents, obj.T/obj.dt*round(32*obj.dt)-1);
+            obj.noise_v = zeros(obj.nAgents, length(gt));
             rat         = V / Lv;
             A           = [ 0 1; -rat^2 -2*rat ];
             B           = sigma_v * [ sqrt(3*rat); (1- 2 * sqrt(3)) * sqrt((rat^3)) ];
@@ -315,7 +316,7 @@ classdef Arena < handle
         function pos_update = indiGuidance(obj, sp)
             guidance_indi_pos_gain      = 0.5;
             guidance_indi_speed_gain    = 1.8;
-            indiRuns                    = round(32*obj.dt);
+            indiRuns                    = round(obj.indiRate*obj.dt);
             pos_update                  = zeros(obj.nAgents,3);
             tmpVel                      = squeeze(obj.a_velocities(max(obj.t-1,1),:,:));
             for i=1:indiRuns
@@ -333,7 +334,7 @@ classdef Arena < handle
                 tmpVel(:,1) = tmpVel(:,1) + obj.dt .* 1./indiRuns .* sp_accel_x;
                 tmpVel(:,2) = tmpVel(:,2) + obj.dt .* 1./indiRuns .* sp_accel_y;
                 %tmpVel(:,3)= tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
-                noise       = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
+                noise       = obj.dt .* 1./indiRuns .* [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
                 pos_update  = pos_update + tmpVel + noise;
             end
             obj.a_velocities(obj.t,:,:) = tmpVel;
