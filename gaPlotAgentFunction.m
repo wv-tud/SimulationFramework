@@ -49,7 +49,7 @@ switch flag
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
         hold off;
-        grid on;
+        grid minor;
         set(gca,'xlim',[0, tmp_agent.cam_range])
         set(gca,'ylim',[-1.5 * simPar.v_max, 1.5 * simPar.v_max])
         title('Current Best Individual','interp','none')
