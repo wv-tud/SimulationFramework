@@ -1,4 +1,4 @@
-function [ totCost, costStruct] = sim_calc_cost( simPar, genome, makeVideo )
+function [ totCost, costStruct, uArena] = sim_calc_cost( simPar, genome, makeVideo )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
