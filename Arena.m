@@ -245,9 +245,8 @@ classdef Arena < handle
             sigma_w     = 0.1 * obj.gustVelocity; % W20 = 15 knts = 7.7 m/s
             sigma_u     = sigma_w / (0.177 + 0.000823 * 10)^(0.4);
             sigma_v     = sigma_u;
-            
             V           = 0.5 * obj.agents{1}.v_max;
-            Lu          = 1 / (0.177 + 0.000823*1)^(1.2);
+            Lu          = 10 * 1 / (0.177 + 0.000823*1)^(1.2);
             Lv          = Lu; % 0.5 * Lu?
             gt          = 0:obj.dt/round(obj.indiRate*obj.dt):(obj.T - obj.dt);
             wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(obj.indiRate*obj.dt));
@@ -270,12 +269,12 @@ classdef Arena < handle
             for i = 1:obj.nAgents
                 obj.noise_v(i,:)  = lsim(A, B, C, D, wv(i,:), gt);
             end
-            %             figure();
-            %             hold all;
-            %             plot(gt,obj.noise_u);
-            %             plot(gt,obj.noise_v);
-            %             hold off;
-            %             pause
+%             figure();
+%             hold all;
+%             plot(gt,obj.noise_u);
+%             plot(gt,obj.noise_v);
+%             hold off;
+%             pause
         end
         
         function [neighbours,dAbs] = detectNeighbours(obj,t)
