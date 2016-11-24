@@ -9,7 +9,7 @@ classdef Arena < handle
         mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 10.0;               % m/s
+        gustVelocity = 5.0;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -72,10 +72,17 @@ classdef Arena < handle
         end
         
         function Simulate(obj,varargin)
+            nT                  = obj.T/obj.dt; % Number of timestep iterations
+            % Preallocate arrays
+            obj.collisions      = zeros(nT,obj.nAgents);
+            obj.a_positions     = zeros(nT+1,obj.nAgents,3);
+            obj.a_headings      = zeros(nT+1,obj.nAgents,2);
+            obj.a_velocities    = zeros(nT+1,obj.nAgents,3);
+            obj.c_pos           = zeros(nT,3);
             % Start simulation
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
-            nT                  = obj.T/obj.dt; % Number of timestep iterations
+            
             t_ar                = zeros(nT,1);  % Array containing timestep calculation time
             obj.distance_cost   = zeros(nT,1);
             if obj.print>0 
@@ -84,7 +91,7 @@ classdef Arena < handle
             for ti = 1:nT
                 obj.t               = ti;
                 obj.c_pos(ti,:)     = feval(obj.c_fun,ti*obj.dt);   % Calculate centroid position
-                [neighbours,~]      = obj.detectNeighbours(ti);     % Calculate agents in each others FOV cone & save collisions
+                [neighbours,dAbs]      = obj.detectNeighbours(ti);     % Calculate agents in each others FOV cone & save collisions
                 if obj.boc == 1
                     if sum(obj.collisions(ti,:)) > 0
                         if obj.print==1
@@ -97,11 +104,12 @@ classdef Arena < handle
                 theta   = zeros(obj.nAgents,1);
                 phi     = zeros(obj.nAgents,1);
                 for i = 1:obj.nAgents
-                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),squeeze(obj.a_positions(ti,i,:)), squeeze(obj.a_headings(ti,i,:)), squeeze(obj.a_velocities(ti,i,:)), find(neighbours(i,:)>0), squeeze(obj.a_positions(ti,:,:))); %#ok<FNDSB>
+                    a_n_mat                       = find(neighbours(i,:)>0);
+                    distances                     = dAbs(i,a_n_mat);
+                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances); %#ok<FNDSB>
                 end
                 v_d             = obj.indiGuidance(v_d);
-
-                obj.a_positions(ti+1,:,:)   = squeeze(obj.a_positions(ti,:,:)) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
+                obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
                 obj.a_headings(ti+1,:,:)    = [phi theta];
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
@@ -173,6 +181,8 @@ classdef Arena < handle
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             obj.nAgents = cAgents + newAgents;
+            obj.a_positions(1,:,:)  = [pos  10*ones(size(pos,1),1)];
+            obj.a_headings(1,:,:)   = [head zeros(size(head,1),1)];
             if strcmp(obj.init,'random') % Find collisions and resolve them before continuing
                 collisionFree = 0;
                 k = 1;
@@ -182,7 +192,6 @@ classdef Arena < handle
                     [~,dAbs]    = obj.detectNeighbours(1);
                     [i,~]       = find(dAbs<(obj.agents{1}.collision_range+k*obj.agents{1}.seperation_range));
                     if isempty(i)
-                        obj.collisions = 0;
                         collisionFree  = 1;
                         continue;
                     end
@@ -196,10 +205,11 @@ classdef Arena < handle
                     end
                     id = unique(i);
                     for i=1:length(id)
-                        pos                             = unifrnd(-0.5*u,0.5*u,1,2);
-                        pos(:,1)                        = pos(:,1)*obj.size(1);
-                        pos(:,2)                        = pos(:,2)*obj.size(2);
-                        obj.agents{id(i)}.pos(1,1:2)    = pos;
+                        new_pos                         = unifrnd(-0.5*u,0.5*u,1,2);
+                        new_pos(:,1)                    = new_pos(:,1)*obj.size(1);
+                        new_pos(:,2)                    = new_pos(:,2)*obj.size(2);
+                        obj.agents{id(i)}.pos(1,1:2)    = new_pos;
+                        obj.a_positions(1,id(i),1:2)    = new_pos;
                     end
                 end
                 obj.size = obj.size .* u;   % Save the (optionally) updated size
@@ -232,13 +242,6 @@ classdef Arena < handle
                     file_clear = 1;
                 end    
             end 
-            % Preallocate arrays
-            obj.collisions      = zeros(obj.T/obj.dt,obj.nAgents);
-            obj.a_positions     = zeros(obj.T/obj.dt+1,obj.nAgents,3);
-            obj.a_headings      = zeros(obj.T/obj.dt+1,obj.nAgents,2);
-            obj.a_velocities    = zeros(obj.T/obj.dt+1,obj.nAgents,3);
-            obj.c_pos           = zeros(obj.T/obj.dt,3);
-            
             sigma_w     = 0.1 * obj.gustVelocity; % W20 = 15 knts = 7.7 m/s
             sigma_u     = sigma_w / (0.177 + 0.000823 * 10)^(0.4);
             sigma_v     = sigma_u;
@@ -276,19 +279,12 @@ classdef Arena < handle
         end
                 
         function [neighbours,dAbs] = detectNeighbours(obj,t)
-            if t==1
-                for i=1:obj.nAgents
-                    obj.a_positions(1,i,:)  = obj.agents{i}.pos(t,:);
-                    obj.a_headings(1,i,:)   = obj.agents{i}.heading(t,:);
-                end
-            end
             headMap     = reshape(meshgrid(obj.a_headings(t,:,1),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,1);
             posMap      = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
-            rij(:,:,1)  = shiftdim(squeeze(posMap(:,:,1))',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
-            rij(:,:,2)  = shiftdim(squeeze(posMap(:,:,2))',2)-(posMap(:,:,2));
-            rij(:,:,3)  = shiftdim(squeeze(posMap(:,:,3))',2)-(posMap(:,:,3));
-            dAbs        = sqrt(rij(:,:,1).^2+rij(:,:,2).^2+rij(:,:,3).^2); % Calculate abs distance
-            dAbs        = dAbs + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % i==j -> agent can't see itself
+            rij(:,:,1)  = shiftdim(reshape(posMap(:,:,1),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
+            rij(:,:,2)  = shiftdim(reshape(posMap(:,:,2),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,2));
+            rij(:,:,3)  = shiftdim(reshape(posMap(:,:,3),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,3));
+            dAbs        = sqrt(rij(:,:,1).^2+rij(:,:,2).^2+rij(:,:,3).^2) + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % Calculate abs distance (i==j can't see itself)
             if t>1
                 col_mat     = find(sum(dAbs < obj.agents{1}.collision_range,2)>0); % Detect and save collisions
                 for i=1:length(col_mat)
@@ -299,15 +295,17 @@ classdef Arena < handle
             %obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
             if obj.t > 0
-                sigma = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                tmp_cost        = 0;
+                sigma           = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                dCostIndices    = dAbs < obj.agents{1}.cam_range;
                 for i=1:obj.nAgents
-                    dCostMat                    = dAbs(i,dAbs(i,:) < obj.agents{1}.cam_range);
-                    dCostnAgents                = length(dCostMat);
-                    obj.distance_cost(obj.t)    = obj.distance_cost(obj.t) + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
+                    dCostMat        = dAbs(i,dCostIndices(i,:));
+                    dCostnAgents    = length(dCostMat);
+                    tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                 end
+                obj.distance_cost(obj.t) = tmp_cost;
             end
-            angles      = headMap + obj.agents{1}.cam_dir(1) - atan2(squeeze(rij(:,:,2)),squeeze(rij(:,:,1))); % Calculate angles
-            angles      = obj.smallAngle(angles); % Transform to domain of -pi to pi
+            angles      = obj.smallAngle(headMap + obj.agents{1}.cam_dir(1) - atan2(reshape(rij(:,:,2),[obj.nAgents obj.nAgents]),reshape(rij(:,:,1),[obj.nAgents obj.nAgents]))); % Calculate angles
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
             neighbours  = (dAbs < obj.agents{1}.cam_range & abs(angles) < 0.5*obj.agents{1}.cam_fov); %& abs(anglesZ) < 0.5*obj.agents{1}.cam_fov); % Save neighbours based on selection ||rij|| > cam_range && abs(angle(rij,cam_dir)) < 1/2*FOV
             neighbours  = neighbours';
@@ -318,7 +316,12 @@ classdef Arena < handle
             guidance_indi_speed_gain    = 1.8;
             indiRuns                    = round(obj.indiRate*obj.dt);
             pos_update                  = zeros(obj.nAgents,3);
-            tmpVel                      = squeeze(obj.a_velocities(max(obj.t-1,1),:,:));
+            tmpVel                      = reshape(obj.a_velocities(max(obj.t-1,1),:,:),[obj.nAgents 3]);
+            if obj.t > 1
+                noise = [obj.noise_u(:,obj.t*(indiRuns-1)) obj.noise_v(:,obj.t*(indiRuns-1))];
+            else
+                noise = [0 0];
+            end
             for i=1:indiRuns
                 pos_x_err   = sp(:,1) - pos_update(:,1);
                 pos_y_err   = sp(:,2) - pos_update(:,2);
@@ -329,13 +332,14 @@ classdef Arena < handle
                 sp_accel_x  = (speed_sp_x - tmpVel(:,1)) .* guidance_indi_speed_gain;
                 sp_accel_y  = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
                 %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;
-                sp_accel_x  = min(0.5,max(-0.5,(sp_accel_x)));
-                sp_accel_y  = min(0.5,max(-0.5,(sp_accel_y)));
-                tmpVel(:,1) = tmpVel(:,1) + obj.dt .* 1./indiRuns .* sp_accel_x;
-                tmpVel(:,2) = tmpVel(:,2) + obj.dt .* 1./indiRuns .* sp_accel_y;
-                %tmpVel(:,3)= tmpVel + 1/obj.arena.dt * 1/indiRuns * sp_accel_z;
-                noise       = obj.dt .* 1./indiRuns .* [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i) zeros(obj.nAgents,1)];
-                pos_update  = pos_update + tmpVel + noise;
+                sp_accel_x  = min(6,max(-6,(sp_accel_x)));
+                sp_accel_y  = min(6,max(-6,(sp_accel_y)));
+                prev_noise  = noise;
+                noise       = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i)];
+                tmpVel(:,1) = tmpVel(:,1) + (noise(:,1) - prev_noise(:,1)) + obj.dt .* 1./indiRuns .* sp_accel_x;
+                tmpVel(:,2) = tmpVel(:,2) + (noise(:,2) - prev_noise(:,2)) + obj.dt .* 1./indiRuns .* sp_accel_y;
+                %tmpVel(:,3)= tmpVel + sp_accel_z;
+                pos_update  = pos_update + obj.dt .* 1./indiRuns .* tmpVel;
             end
             obj.a_velocities(obj.t,:,:) = tmpVel;
         end

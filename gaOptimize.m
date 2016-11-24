@@ -14,7 +14,7 @@ simPar = struct(...
     'camera_range',         4.0, ...
     'init',                 'random', ...
     'size',                 [15 15], ...
-    'v_max',                1.4, ...
+    'v_max',                10, ...
     'distance_cost',        1, ...
     'velocity_cost',        0.1, ...
     'collision_cost',       1e8, ...
@@ -52,27 +52,27 @@ simulations{i}.UB(IB+1) =  3;
 simulations{i}.LB(OB+1) = -4;
 simulations{i}.UB(OB+1) =  4;
 i = i + 1;
-% Pinciroli optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'pinciroli';          
-simulations{i}.LB       = zeros(1,2);
-simulations{i}.UB       = [0.5 0.5];
-i = i + 1;
-% Polynomial optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'polynomial';
-simulations{i}.LB       = [0 -5*ones(1,13)];
-simulations{i}.UB       = [0.5  5*ones(1,13)];
-i = i + 1;
-% Sinusoid optimization
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'sinusoid';
-simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
-i = i + 1;
+% % Pinciroli optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'pinciroli';          
+% simulations{i}.LB       = zeros(1,2);
+% simulations{i}.UB       = [0.5 0.5];
+% i = i + 1;
+% % Polynomial optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'polynomial';
+% simulations{i}.LB       = [0 -5*ones(1,13)];
+% simulations{i}.UB       = [0.5  5*ones(1,13)];
+% i = i + 1;
+% % Sinusoid optimization
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'sinusoid';
+% simulations{i}.LB       = [0   -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
+% simulations{i}.UB       = [0.5  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
+% i = i + 1;
 %% Run all simulations
 x_store         = cell(length(simulations),1);
 simPar_store    = cell(length(simulations),1);

@@ -36,6 +36,7 @@ classdef Agent < handle
         swarmSize           = 1;
         c_pos               = [0 0];
         circle_packing_radius;
+        prev_vd             = 0;
     end
     
     methods
@@ -53,51 +54,52 @@ classdef Agent < handle
             obj.collisions              = zeros(obj.T/obj.dt+1,1);
         end
         
-        function [v_d,theta,phi] = Update(obj,t,c_pos,pos,heading,vel,neighbours, agent_positions)
+        function [v_d,theta,phi] = Update(obj,t,c_pos,pos,heading,vel,neighbours,agent_positions,agent_distances)
             obj.t                   = t;
             obj.pos                 = pos;
             obj.c_pos               = c_pos;
             obj.vel                 = vel;
             obj.heading             = heading;
-            obj.neighbours{obj.t}   = obj.buildNeighbourMatrix(neighbours, agent_positions);                     % Using detected neighbours build the matrix
-            v_d                     = obj.calculate_vd(obj.neighbours{obj.t}(:,3:5));
+            obj.neighbours{obj.t}   = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances);                     % Using detected neighbours build the matrix
+            [v_d,g_d]               = obj.calculate_vd(obj.neighbours{obj.t}(:,3:6));
             v_dhat                  = v_d/norm(v_d);
             if obj.swarmMode == 1
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
                 theta                   = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
             else
-                phi                     = atan2(obj.u_d_decom.g(obj.t,2),obj.u_d_decom.g(obj.t,1));                           % Yaw angle of v_d
-                theta                   = atan2(obj.u_d_decom.g(obj.t,3),0);
+                phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of v_d
+                theta                   = atan2(g_d(3),0);
             end
-            obj.vel_cost            = obj.vel_cost + (norm(v_d) / norm(obj.u_d_decom.g(obj.t,:)) - 1).^2;                             % Apply agent dynamics to desired velocity
+            obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
-        function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions)
+        function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
             m_neighbours    = [];
             newStart        = 0;
-            if obj.t > 1 && ~isempty(obj.neighbours{obj.t-1})
-                m_neighbours    = obj.neighbours{obj.t-1}(obj.neighbours{obj.t-1}(:,2) > (obj.t-obj.t_mem),:);                           % Select neighbours from memory which haven't degraded
-                m_neighbours    = m_neighbours(logical(sum(m_neighbours(:,1)*ones(size(neighbours))==ones(size(m_neighbours(:,1)))*neighbours,2)==0),:);   % Only keep which we cant see
-                newStart        = size(m_neighbours,1);
+            if obj.t > 1
+                prev_neighbours = obj.neighbours{obj.t-1};
+                if~isempty(prev_neighbours)
+                    m_neighbours    = prev_neighbours(prev_neighbours(:,2) > (obj.t-obj.t_mem),:);                           % Select neighbours from memory which haven't degraded
+                    m_neighbours    = m_neighbours(logical(sum(m_neighbours(:,1)*ones(size(neighbours))==ones(size(m_neighbours(:,1)))*neighbours,2)==0),:);   % Only keep which we cant see
+                    newStart        = size(m_neighbours,1);
+                end
             end
-            m_neighbours    = [m_neighbours; zeros(length(neighbours),5)];
-            randN           = rand(length(neighbours),3);
+            m_neighbours    = [m_neighbours; zeros(length(neighbours),6)];
+            pos_noise           = randn(length(neighbours),3) .* (1 - obj.cam_acc) .* agent_distances';
+            dist_noise          = randn(length(neighbours),1) .* (1 - obj.cam_acc) .* agent_distances';
             for j = 1:length(neighbours)
-                j_pos                       = agent_positions(neighbours(j),:)';
-                noise_range                 = [obj.cam_acc (2-obj.cam_acc)].*sqrt(sum((obj.pos-j_pos).^2));  % Add sensor noise
-                noise                       = (randN(j,:)-0.5).*(noise_range(2)-noise_range(1));                            % Generate noise
-                j_pos                       = j_pos + noise';
-                m_neighbours(newStart+j,:)  = [neighbours(j) obj.t j_pos']; % Not yet in memory - insert
+                j_pos                       = agent_positions(neighbours(j),:)' + pos_noise(j,:)';
+                m_neighbours(newStart+j,:)  = [neighbours(j) obj.t j_pos' agent_distances(j)+dist_noise(j)]; % Not yet in memory - insert
             end
         end
         
-        function v_d = calculate_vd(obj, neighbours)
-            L_i = deal([0 0 0]);        % Lattice formation
+        function [v_d,g_i] = calculate_vd(obj, neighbours)
+            L_i = [0 0 0];        % Lattice formation
             q_i = obj.pos' - obj.c_pos; % Vector of current position and c
             g_i = obj.global_interaction(q_i);
             if ~isempty(neighbours)
-                q_ij    = q_i - (neighbours - obj.c_pos);       % Relative vector between agent i and j
-                nMag    = sqrt(q_ij(:,1).^2 + q_ij(:,2).^2 + q_ij(:,3).^2);
+                q_ij    = q_i - (neighbours(:,1:3) - obj.c_pos);       % Relative vector between agent i and j
+                nMag    = neighbours(:,4);
                 nDir    = q_ij ./ nMag;
                 nL_i    = obj.local_interaction(nMag')';
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents 
@@ -109,15 +111,12 @@ classdef Agent < handle
                 L_i = L_i / u_d_n * obj.v_max;
                 u_d = g_i + L_i;
             end
-            if obj.t > 1
-                d_i = -obj.genome(1)*(L_i+g_i - (obj.u_d_decom.g(obj.t-1,:)+obj.u_d_decom.L(obj.t-1,:)+obj.u_d_decom.d(obj.t-1,:)));   % Calculate dissipative energy
-            else
-                d_i = -obj.genome(1)*(L_i+g_i);
-            end
+            d_i = -obj.genome(1)*(L_i+g_i - obj.prev_vd);   % Calculate dissipative energy
             v_d = u_d + d_i;
-            obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
-            obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
-            obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
+            obj.prev_vd = v_d;
+            %obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
+            %obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
+            %obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
         end
         
         function y = local_interaction(x)
@@ -137,57 +136,57 @@ classdef Agent < handle
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.5 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.75 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
-        function plotVelocityComponents(obj,arena)
-            H       = figure(2);
-            Fpos    = get(H,'pos');
-            set(H,'Position',[Fpos(1) Fpos(2) 1000 600]);
-            h       = uicontrol('style','slider','units','pixel','position',[20 20 960 20],'min',1,'max',obj.swarmSize,'sliderstep',[1/(obj.swarmSize-1) 1/(obj.swarmSize-1)],'Value',obj.id);
-            uicontrol('style','text','units','pixel','position',[490 0 54 20],'String',strcat(['Agent ' num2str(obj.id)]));
-            addlistener(h,'ContinuousValueChange',@(hObject, event) arena.agents{round(h.Value)}.plotVelocityComponents());
-            
-            subplot(4,1,1);
-            plot(obj.dt:obj.dt:obj.T,sqrt(sum((obj.u_d_decom.g+obj.u_d_decom.L+obj.u_d_decom.d).^2,2)));
-            hold on;
-            plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-            hold off;
-            axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-            title('v_d - Total');
-            xlabel('Time [s]');
-            ylabel('velocity [m/s]');
-            
-            subplot(4,1,2);
-            plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.g.^2,2)));
-            hold on;
-            plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-            hold off;
-            axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-            title('g_i - Global attractor');
-            xlabel('Time [s]');
-            ylabel('velocity [m/s]');
-            
-            subplot(4,1,3);
-            plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.L.^2,2)));
-            hold on;
-            plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-            hold off;
-            axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-            title('L_i - Attr/repul pair');
-            xlabel('Time [s]');
-            ylabel('velocity [m/s]');
-            
-            subplot(4,1,4);
-            plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.d.^2,2)));
-            hold on;
-            plot([obj.dt obj.T],[1 1]*0.1*obj.v_max*obj.dt,'k--');
-            hold off;
-            axis([obj.dt obj.T 0 0.1*obj.v_max*obj.dt]);
-            title('d_i - Dissapative');
-            xlabel('Time [s]');
-            ylabel('velocity [m/s]');
-        end
+%         function plotVelocityComponents(obj,arena)
+%             H       = figure(2);
+%             Fpos    = get(H,'pos');
+%             set(H,'Position',[Fpos(1) Fpos(2) 1000 600]);
+%             h       = uicontrol('style','slider','units','pixel','position',[20 20 960 20],'min',1,'max',obj.swarmSize,'sliderstep',[1/(obj.swarmSize-1) 1/(obj.swarmSize-1)],'Value',obj.id);
+%             uicontrol('style','text','units','pixel','position',[490 0 54 20],'String',strcat(['Agent ' num2str(obj.id)]));
+%             addlistener(h,'ContinuousValueChange',@(hObject, event) arena.agents{round(h.Value)}.plotVelocityComponents());
+%             
+%             subplot(4,1,1);
+%             plot(obj.dt:obj.dt:obj.T,sqrt(sum((obj.u_d_decom.g+obj.u_d_decom.L+obj.u_d_decom.d).^2,2)));
+%             hold on;
+%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
+%             hold off;
+%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
+%             title('v_d - Total');
+%             xlabel('Time [s]');
+%             ylabel('velocity [m/s]');
+%             
+%             subplot(4,1,2);
+%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.g.^2,2)));
+%             hold on;
+%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
+%             hold off;
+%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
+%             title('g_i - Global attractor');
+%             xlabel('Time [s]');
+%             ylabel('velocity [m/s]');
+%             
+%             subplot(4,1,3);
+%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.L.^2,2)));
+%             hold on;
+%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
+%             hold off;
+%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
+%             title('L_i - Attr/repul pair');
+%             xlabel('Time [s]');
+%             ylabel('velocity [m/s]');
+%             
+%             subplot(4,1,4);
+%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.d.^2,2)));
+%             hold on;
+%             plot([obj.dt obj.T],[1 1]*0.1*obj.v_max*obj.dt,'k--');
+%             hold off;
+%             axis([obj.dt obj.T 0 0.1*obj.v_max*obj.dt]);
+%             title('d_i - Dissapative');
+%             xlabel('Time [s]');
+%             ylabel('velocity [m/s]');
+%         end
         
         function F = plotGlobalAttraction(obj,x_arr,y_arr,varargin)
             resfac      = 20;
