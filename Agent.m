@@ -22,7 +22,7 @@ classdef Agent < handle
         heading             = [];                   % Matrix containing current heading ([yaw pitch])
         vel                 = [];
         genome              = [];
-        % Cost 
+        % Cost
         collisions          = 0;                    % Matrix containing collisions (t,id)
         vel_cost            = 0;
         dist_cost           = 0;
@@ -102,7 +102,7 @@ classdef Agent < handle
                 nMag    = neighbours(:,4);
                 nDir    = q_ij ./ nMag;
                 nL_i    = obj.local_interaction(nMag')';
-                L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents 
+                L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents
             end
             u_d     = g_i + L_i;                                    % Sum to find u_d
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2 + u_d(3)^2);
@@ -114,9 +114,6 @@ classdef Agent < handle
             d_i = -obj.genome(1)*(L_i+g_i - obj.prev_vd);   % Calculate dissipative energy
             v_d = u_d + d_i;
             obj.prev_vd = v_d;
-            %obj.u_d_decom.g(obj.t,:) = g_i;   % Save to array for plotting
-            %obj.u_d_decom.L(obj.t,:) = L_i;   % Save to array for plotting
-            %obj.u_d_decom.d(obj.t,:) = d_i;   % Save to array for plotting
         end
         
         function y = local_interaction(x)
@@ -138,55 +135,6 @@ classdef Agent < handle
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
             g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.75 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
-        
-%         function plotVelocityComponents(obj,arena)
-%             H       = figure(2);
-%             Fpos    = get(H,'pos');
-%             set(H,'Position',[Fpos(1) Fpos(2) 1000 600]);
-%             h       = uicontrol('style','slider','units','pixel','position',[20 20 960 20],'min',1,'max',obj.swarmSize,'sliderstep',[1/(obj.swarmSize-1) 1/(obj.swarmSize-1)],'Value',obj.id);
-%             uicontrol('style','text','units','pixel','position',[490 0 54 20],'String',strcat(['Agent ' num2str(obj.id)]));
-%             addlistener(h,'ContinuousValueChange',@(hObject, event) arena.agents{round(h.Value)}.plotVelocityComponents());
-%             
-%             subplot(4,1,1);
-%             plot(obj.dt:obj.dt:obj.T,sqrt(sum((obj.u_d_decom.g+obj.u_d_decom.L+obj.u_d_decom.d).^2,2)));
-%             hold on;
-%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-%             hold off;
-%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-%             title('v_d - Total');
-%             xlabel('Time [s]');
-%             ylabel('velocity [m/s]');
-%             
-%             subplot(4,1,2);
-%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.g.^2,2)));
-%             hold on;
-%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-%             hold off;
-%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-%             title('g_i - Global attractor');
-%             xlabel('Time [s]');
-%             ylabel('velocity [m/s]');
-%             
-%             subplot(4,1,3);
-%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.L.^2,2)));
-%             hold on;
-%             plot([obj.dt obj.T],[1 1]*obj.v_max*obj.dt,'k--');
-%             hold off;
-%             axis([obj.dt obj.T 0 2.5*obj.v_max*obj.dt]);
-%             title('L_i - Attr/repul pair');
-%             xlabel('Time [s]');
-%             ylabel('velocity [m/s]');
-%             
-%             subplot(4,1,4);
-%             plot(obj.dt:obj.dt:obj.T,sqrt(sum(obj.u_d_decom.d.^2,2)));
-%             hold on;
-%             plot([obj.dt obj.T],[1 1]*0.1*obj.v_max*obj.dt,'k--');
-%             hold off;
-%             axis([obj.dt obj.T 0 0.1*obj.v_max*obj.dt]);
-%             title('d_i - Dissapative');
-%             xlabel('Time [s]');
-%             ylabel('velocity [m/s]');
-%         end
         
         function F = plotGlobalAttraction(obj,x_arr,y_arr,varargin)
             resfac      = 20;

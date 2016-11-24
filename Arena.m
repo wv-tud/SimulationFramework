@@ -17,7 +17,7 @@ classdef Arena < handle
         sinusoidAgents = 0;             % Number of sinusoid Agents
         swarmMode    = 2;               % 1= look where you go, 2= look towards global
         init         = 'random';        % initialisation procedure ['random','rect','square']
-        boc          = 0;               % Break simulation on impact    
+        boc          = 0;               % Break simulation on impact
         size         = [10 10];         % Size of spawn arena [x y][m]
         c_fun        = @(t) [0 0 10];   % Centre point function
         diskType     = 'hdd';           % Check filenames existing on HDD or SSD
@@ -68,7 +68,7 @@ classdef Arena < handle
                 1+sqrt(2)+sqrt(6) ...
                 1+sqrt(2)+sqrt(6) ...
                 5.122 ...
-            ];
+                ];
         end
         
         function Simulate(obj,varargin)
@@ -85,7 +85,7 @@ classdef Arena < handle
             
             t_ar                = zeros(nT,1);  % Array containing timestep calculation time
             obj.distance_cost   = zeros(nT,1);
-            if obj.print>0 
+            if obj.print>0
                 iterT = tic;  % Start timer for first iteration
             end
             for ti = 1:nT
@@ -114,7 +114,7 @@ classdef Arena < handle
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
                     iterT       = tic;                              % Set new time
-                    perc        = ti/nT;                            % Get iteration percentage 
+                    perc        = ti/nT;                            % Get iteration percentage
                     ETA         = round(mean(t_ar(1:ti))*(nT-ti));  % Calculate time remaining
                     text        = strcat([char(repmat('*',1,round(perc*20))) char(repmat('.',1,20-round(perc*20))) ' ' num2str(round(perc*100)) '%% (' obj.sec2time(ETA) ') ' num2str(round(obj.dt/mean(t_ar(1:ti)),2)) 'x\n']);
                     if ti>1
@@ -240,8 +240,8 @@ classdef Arena < handle
                     obj.name = strcat([obj.name(1:end-i) num2str(version)]);
                 else
                     file_clear = 1;
-                end    
-            end 
+                end
+            end
             sigma_w     = 0.1 * obj.gustVelocity; % W20 = 15 knts = 7.7 m/s
             sigma_u     = sigma_w / (0.177 + 0.000823 * 10)^(0.4);
             sigma_v     = sigma_u;
@@ -260,7 +260,7 @@ classdef Arena < handle
             A           = [ 0 1; -rat^2 -2*rat ];
             B           = sigma_u * [ sqrt(3*rat); (1- 2 * sqrt(3)) * sqrt((rat^3)) ];
             for i = 1:obj.nAgents
-               obj.noise_u(i,:)  = lsim(A, B, C, D, wu(i,:), gt);
+                obj.noise_u(i,:)  = lsim(A, B, C, D, wu(i,:), gt);
             end
             % Noise v
             obj.noise_v = zeros(obj.nAgents, length(gt));
@@ -270,14 +270,14 @@ classdef Arena < handle
             for i = 1:obj.nAgents
                 obj.noise_v(i,:)  = lsim(A, B, C, D, wv(i,:), gt);
             end
-%             figure();
-%             hold all;
-%             plot(gt,obj.noise_u);
-%             plot(gt,obj.noise_v);
-%             hold off;
-%             pause
+            %             figure();
+            %             hold all;
+            %             plot(gt,obj.noise_u);
+            %             plot(gt,obj.noise_v);
+            %             hold off;
+            %             pause
         end
-                
+        
         function [neighbours,dAbs] = detectNeighbours(obj,t)
             headMap     = reshape(meshgrid(obj.a_headings(t,:,1),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,1);
             posMap      = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
@@ -301,6 +301,9 @@ classdef Arena < handle
                 for i=1:obj.nAgents
                     dCostMat        = dAbs(i,dCostIndices(i,:));
                     dCostnAgents    = length(dCostMat);
+                    if dCostnAgents == 0
+                        dCostMat = obj.agents{1}.cam_range;
+                    end
                     tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                 end
                 obj.distance_cost(obj.t) = tmp_cost;
@@ -343,7 +346,7 @@ classdef Arena < handle
             end
             obj.a_velocities(obj.t,:,:) = tmpVel;
         end
-
+        
         function rotmat = rotMat(~,varargin)
             angle = varargin{1};
             if nargin==3
@@ -381,7 +384,7 @@ classdef Arena < handle
                 end
             end
         end
-    
+        
         function string = sec2time(~,ETA)
             % Convert e.g. 3661sec to 01:01:01
             ETA_h   = floor(ETA/3600);

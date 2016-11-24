@@ -1,4 +1,4 @@
-function [ totCost, costStruct, uArena] = sim_calc_cost( simPar, genome, makeVideo )
+function [ totCost, costStruct] = sim_calc_cost( simPar, genome, makeVideo )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
@@ -8,15 +8,15 @@ collisionCost   = 0;
 for s=1:simPar.trialSize
     % Simulation options
     if ~isfield(simPar,'mission')
-       uArena              	= Mission(num2str(1),'cyberzooCW',{}); 
+        uArena              	= Mission(num2str(1),'cyberzooCW',{});
     else
         if ~isa(simPar.mission,'cell')
-           uArena           = Mission(num2str(1),simPar.mission,{});  
+            uArena           = Mission(num2str(1),simPar.mission,{});
         else
-           missionIndex     = s - floor((s-1) / size(simPar.mission,2)) * size(simPar.mission,2);
-           uArena           = Mission(num2str(1),simPar.mission{missionIndex},{});
+            missionIndex     = s - floor((s-1) / size(simPar.mission,2)) * size(simPar.mission,2);
+            uArena           = Mission(num2str(1),simPar.mission{missionIndex},{});
         end
-    end 
+    end
     uArena.typeName             = simPar.type;
     uArena.T                    = simPar.simTime;
     uArena.dt                   = simPar.fps^(-1);
@@ -33,7 +33,7 @@ for s=1:simPar.trialSize
     if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
         simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
         fprintf('WARNING: lattice ratio >= 2, limiting camera range to %9.2f\n', simPar.camera_range);
-    end  
+    end
     switch(simPar.type)
         case 'simpleNN'
             fakeNet             = struct();
