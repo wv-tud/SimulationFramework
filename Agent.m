@@ -67,7 +67,7 @@ classdef Agent < handle
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
                 theta                   = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
             else
-                phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of v_d
+                phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of g_d
                 theta                   = atan2(g_d(3),0);
             end
             %obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
@@ -133,7 +133,7 @@ classdef Agent < handle
         
         function g_i = globalField(obj,pos,seperation_distance,v_max)
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.75 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.25 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
         function F = plotGlobalAttraction(obj,x_arr,y_arr,varargin)

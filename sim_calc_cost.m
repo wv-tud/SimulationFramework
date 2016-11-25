@@ -1,4 +1,4 @@
-function totCost = sim_calc_cost( simPar, genome, makeVideo )
+function [varargout] = sim_calc_cost( simPar, genome, makeVideo, returnArena )
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
@@ -75,5 +75,8 @@ collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simP
 % costStruct.velocityCost     = velocityCost;
 % costStruct.distanceCost     = distanceCost;
 % costStruct.collisionCost    = collisionCost;
-totCost                     = collisionCost + distanceCost;
+varargout{1}                     = collisionCost + distanceCost;
+if returnArena
+    varargout{2}                     = uArena;
+end
 end

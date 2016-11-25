@@ -2,7 +2,7 @@ global agentType;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
-    'simTime',              15, ...
+    'simTime',              25, ...
     'trialSize',            3, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
@@ -14,7 +14,7 @@ simPar = struct(...
     'camera_range',         4.0, ...
     'init',                 'random', ...
     'size',                 [15 15], ...
-    'v_max',                5, ...
+    'v_max',                10, ...
     'distance_cost',        1, ...
     'velocity_cost',        0, ...
     'collision_cost',       1e5, ...
@@ -26,9 +26,9 @@ simulations             = {};
 i                       = 1;
 % NN optimization
 simulations{i}          = struct();
-simulations{i}.popSize  = 75;
+simulations{i}.popSize  = 150;
 simulations{i}.type     = 'simpleNN';
-simulations{i}.nnSize   = 15;
+simulations{i}.nnSize   = 35;
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
@@ -45,12 +45,12 @@ switch(length(simulations{i}.nnSize))
 end
 %simulations{i}.LB      = -15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
 %simulations{i}.UB      =  15 / (simulations{i}.nnSize(end)) * ones(1,1 + simulations{i}.genomeNetLength);
-simulations{i}.LB       = [0  -1 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.UB       = [0.5 1 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.LB(IB+1) = -3;
-simulations{i}.UB(IB+1) =  3;
-simulations{i}.LB(OB+1) = -4;
-simulations{i}.UB(OB+1) =  4;
+simulations{i}.LB       = [0  -0.5 * ones(1, simulations{i}.genomeNetLength)];
+simulations{i}.UB       = [0.5 0.5 * ones(1, simulations{i}.genomeNetLength)];
+simulations{i}.LB(IB+1) = -4;
+simulations{i}.UB(IB+1) =  4;
+simulations{i}.LB(OB+1) = -5;
+simulations{i}.UB(OB+1) =  5;
 i = i + 1;
 % % Pinciroli optimization
 % simulations{i}          = struct();
@@ -120,7 +120,8 @@ for si = 1:length(simulations)
     end
     %% Do a sample simulation to get an estimate of the time
     pT              = tic;
-    [cost]          = sim_calc_cost(simPar, sampleGenome, false);
+    [cost, sArena]          = sim_calc_cost(simPar, sampleGenome, false, true);
+    sArena.agents{1}.plotGlobalAttraction(-sArena.size(1):0.1:sArena.size(1),-sArena.size(2):0.1:sArena.size(2));
     simt            = toc(pT);
     fprintf(strcat(['\n\nSimulation ' simPar.type ' took ' num2str(simt) 's - performance: (cost: ' num2str(cost) ')\n\n']));
     %% Run GA
@@ -128,14 +129,14 @@ for si = 1:length(simulations)
     options = optimoptions('ga',...
         'FunctionTolerance', 1e-9, ...
         'PopulationSize',simulations{si}.popSize, ...
-        ...%'FitnessScalingFcn', {@fitscalingprop}, ...
+        'FitnessScalingFcn', {@fitscalingprop}, ...
         'Display','iter', ...
         'PlotFcn',{@gaPlotAgentScore @(options,state,flag) gaPlotAgentFunction(simPar, options, state, flag)},...
         'UseParallel',1,...
         ...%'OutputFcn',@gaOutputFun,...
-        'CrossoverFraction',0.8...
+        'CrossoverFraction',0.7...
         );
-    [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
+    [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
     save(strcat(['./data/ga-' simulations{si}.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
     %% Genetic optimization finished, sim the winner and make video
@@ -143,10 +144,8 @@ for si = 1:length(simulations)
     simPar_store{si}    = simPar;
 end
 %% Create videos
-uArena_store        = cell(length(simulations),1);
-costStruct_store    = cell(length(simulations),1);
 for i = 1:length(simulations)
     close all;
     agentType = simPar_store{i}.type;
-    [~,costStruct_store{i}] = sim_calc_cost(simPar_store{i}, x_store{i}, true);
+    sim_calc_cost(simPar_store{i}, x_store{i}, true, false);
 end

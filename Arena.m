@@ -39,7 +39,7 @@ classdef Arena < handle
         noise_u;
         noise_v;
         distance_cost = [];
-        indiRate        = 512;
+        indiRate      = 30;
     end
     
     methods
@@ -280,10 +280,10 @@ classdef Arena < handle
         function [neighbours,dAbs] = detectNeighbours(obj,t)
             headMap     = reshape(meshgrid(obj.a_headings(t,:,1),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,1);
             posMap      = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
-            rij(:,:,1)  = shiftdim(reshape(posMap(:,:,1),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
-            rij(:,:,2)  = shiftdim(reshape(posMap(:,:,2),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,2));
-            rij(:,:,3)  = shiftdim(reshape(posMap(:,:,3),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,3));
-            dAbs        = sqrt(rij(:,:,1).^2+rij(:,:,2).^2+rij(:,:,3).^2) + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % Calculate abs distance (i==j can't see itself)
+            rij_x  = shiftdim(reshape(posMap(:,:,1),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
+            rij_y  = shiftdim(reshape(posMap(:,:,2),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,2));
+            rij_z  = shiftdim(reshape(posMap(:,:,3),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,3));
+            dAbs        = sqrt(rij_x.^2+rij_y.^2+rij_z.^2) + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % Calculate abs distance (i==j can't see itself)
             if t>1
                 col_mat     = find(sum(dAbs < obj.agents{1}.collision_range,2)>0); % Detect and save collisions
                 for i=1:length(col_mat)
@@ -307,8 +307,8 @@ classdef Arena < handle
                 end
                 obj.distance_cost(obj.t) = tmp_cost;
             end
-            angles      = obj.smallAngle(headMap + obj.agents{1}.cam_dir(1) - atan2(reshape(rij(:,:,2),[obj.nAgents obj.nAgents]),reshape(rij(:,:,1),[obj.nAgents obj.nAgents]))); % Calculate angles
-            %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij(:,:,3)),sqrt(squeeze(rij(:,:,1).^2)+squeeze(rij(:,:,2).^2))); %calculates the pitch angle
+            angles      = obj.smallAngle(headMap + obj.agents{1}.cam_dir(1) - atan2(reshape(rij_y,[obj.nAgents obj.nAgents]),reshape(rij_x,[obj.nAgents obj.nAgents]))); % Calculate angles
+            %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij_z),sqrt(squeeze(rij_x.^2)+squeeze(rij_y.^2))); %calculates the pitch angle
             neighbours  = (dAbs < obj.agents{1}.cam_range & abs(angles) < 0.5*obj.agents{1}.cam_fov); %& abs(anglesZ) < 0.5*obj.agents{1}.cam_fov); % Save neighbours based on selection ||rij|| > cam_range && abs(angle(rij,cam_dir)) < 1/2*FOV
             neighbours  = neighbours';
         end
