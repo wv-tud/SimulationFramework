@@ -34,9 +34,12 @@ classdef Agent < handle
         T                   = 0;
         swarmMode           = 2;
         swarmSize           = 1;
-        c_pos               = [0 0];
+        c_pos               = [0 0 10];
         circle_packing_radius;
         prev_vd             = 0;
+        field_type          = 'bucket';
+        field_varargin;
+        c_fun               = 0;
     end
     
     methods
@@ -54,10 +57,12 @@ classdef Agent < handle
             obj.collisions              = zeros(obj.T/obj.dt+1,1);
         end
         
-        function [v_d,theta,phi] = Update(obj,t,c_pos,pos,heading,vel,neighbours,agent_positions,agent_distances)
+        function [v_d,theta,phi] = Update(obj,t,pos,heading,vel,neighbours,agent_positions,agent_distances)
             obj.t                   = t;
             obj.pos                 = pos;
-            obj.c_pos               = c_pos;
+            if isa(obj.c_fun,'function_handle')
+                obj.c_pos               = feval(obj.c_fun, obj.t * obj.dt);
+            end
             obj.vel                 = vel;
             obj.heading             = heading;
             obj.neighbours{obj.t}   = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances);                     % Using detected neighbours build the matrix
@@ -70,7 +75,7 @@ classdef Agent < handle
                 phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of g_d
                 theta                   = atan2(g_d(3),0);
             end
-            %obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
+            obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
@@ -95,10 +100,9 @@ classdef Agent < handle
         
         function [v_d,g_i] = calculate_vd(obj, neighbours)
             L_i = [0 0 0];        % Lattice formation
-            q_i = obj.pos' - obj.c_pos; % Vector of current position and c
-            g_i = obj.global_interaction(q_i);
+            g_i = obj.global_interaction(obj.pos');
             if ~isempty(neighbours)
-                q_ij    = q_i - (neighbours(:,1:3) - obj.c_pos);       % Relative vector between agent i and j
+                q_ij    = obj.pos' - neighbours(:,1:3);       % Relative vector between agent i and j
                 nMag    = neighbours(:,4);
                 nDir    = q_ij ./ nMag;
                 nL_i    = obj.local_interaction(nMag')';
@@ -128,12 +132,40 @@ classdef Agent < handle
         end
         
         function g = global_interaction(obj,x)
-            g       = obj.globalField(x, obj.seperation_range + obj.collision_range, obj.v_max);
+            x = x - obj.c_pos;
+            switch obj.field_type
+                case 'circle'
+                g       = obj.circleField(x, obj.field_varargin); 
+                case 'bucket'
+                g       = obj.bucketField(x, obj.field_varargin);
+                otherwise
+                    obj.field_type      = 'bucket';
+                    obj.field_varargin  = cell(obj.seperation_range + obj.collision_range,obj.v_max);
+                    g                   = global_interaction(x, obj.field_varargin);
+            end
         end
         
-        function g_i = globalField(obj,pos,seperation_distance,v_max)
-            bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * seperation_distance;
-            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.25 * v_max / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+        function g_i = bucketField(obj, pos, inputArgs)
+            % pos, seperation_distance, v_max
+            bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
+            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.25 * inputArgs{2} / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+        end
+        
+        function g_i = circleField(~, pos, inputArgs)
+            % pos, radius, v_max, direction, band_width_gain, spiral_gain
+            pos_n           = sqrt(pos(1)^2+pos(2)^2);
+            if length(inputArgs)>=4
+                band_width_gain = inputArgs{4};
+            else
+                band_width_gain = 0.25;
+            end
+            if length(inputArgs)>=5
+                spiral_gain = inputArgs{5};
+            else
+                spiral_gain = 6;
+            end
+            g_i             = inputArgs{2} * min(0.5,(0.25 + band_width_gain*(pos_n-inputArgs{1})^2)) * rotz(inputArgs{3} * (90 + min(90,max(-90,spiral_gain*(inputArgs{1} - pos_n))))) * 1/pos_n * [-pos(1); -pos(2); 0];
+            g_i             = g_i';
         end
         
         function F = plotGlobalAttraction(obj,x_arr,y_arr,varargin)
@@ -160,7 +192,7 @@ classdef Agent < handle
             u       = reshape(g_i(:,1),length(y_arr),length(x_arr))./vNorm;
             v       = reshape(g_i(:,2),length(y_arr),length(x_arr))./vNorm;
             w       = reshape(g_i(:,3),length(y_arr),length(x_arr))./vNorm;
-            F       = figure(3);
+            F       = figure();
             hold on;
             surf(x_arr,y_arr, vNorm,'EdgeColor','none','LineStyle','none');
             quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');

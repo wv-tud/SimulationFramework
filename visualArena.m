@@ -46,12 +46,12 @@ classdef visualArena < handle
             obj.arenaVars.seperation_range  = arena.agents{1}.seperation_range;
             obj.arenaVars.nAgents           = arena.nAgents;
             obj.arenaVars.agents            = arena.agents;
-            obj.arenaVars.c_pos             = arena.c_pos;
             obj.arenaVars.collisions        = arena.collisions;
             obj.arenaVars.a_headings        = arena.a_headings;
             obj.arenaVars.a_positions       = arena.a_positions;
             obj.arenaVars.dt                = arena.dt;
             obj.arenaVars.T                 = arena.T;
+            obj.arenaVars.field             = arena.field;
             
             
         end
@@ -174,7 +174,15 @@ classdef visualArena < handle
                     labels = cellstr(int2str((1:obj.arenaVars.nAgents)'));
                     obj.fh_label = text(pos(:,1),pos(:,2),labels,'Color','k','FontSize',7);
                 end
-                obj.fh_cpos = plot(obj.arenaVars.c_pos(t,1),obj.arenaVars.c_pos(t,2),'x');
+                obj.fh_cpos = {};
+                for i=1:length(obj.arenaVars.field)
+                    if isfield(obj.arenaVars.field,'c_fun')
+                        c_pos           = feval(obj.arenaVars.field(i).c_fun, obj.arenaVars.dt);
+                        obj.fh_cpos{i}  = plot(c_pos(1),c_pos(2),'x');
+                    else
+                        obj.fh_cpos{i}  = plot(obj.arenaVars.field(i).c_pos(1),obj.arenaVars.field(i).c_pos(2),'x');
+                    end
+                end
                 hold off;
             else
                 % Update shapes
@@ -239,8 +247,13 @@ classdef visualArena < handle
                         obj.fh_label(i).Position(1:2) = [pos(i,1) pos(i,2)];
                     end
                 end
-                obj.fh_cpos.XData = obj.arenaVars.c_pos(t,1);
-                obj.fh_cpos.YData = obj.arenaVars.c_pos(t,2);
+                for i=1:length(obj.arenaVars.field)
+                    if isfield(obj.arenaVars.field,'c_fun')
+                        c_pos                   = feval(obj.arenaVars.field(i).c_fun, t * obj.arenaVars.dt);
+                        obj.fh_cpos{i}.XData    = c_pos(1);
+                        obj.fh_cpos{i}.YData    = c_pos(2);
+                    end
+                end
             end
             % Set axes
             if obj.p_mov_axe == 1

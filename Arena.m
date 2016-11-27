@@ -9,7 +9,7 @@ classdef Arena < handle
         mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 5.0;               % m/s
+        gustVelocity = 2.5;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -19,7 +19,6 @@ classdef Arena < handle
         init         = 'random';        % initialisation procedure ['random','rect','square']
         boc          = 0;               % Break simulation on impact
         size         = [10 10];         % Size of spawn arena [x y][m]
-        c_fun        = @(t) [0 0 10];   % Centre point function
         diskType     = 'hdd';           % Check filenames existing on HDD or SSD
         % Simulation options
         save         = 0;               % save output to .mat file
@@ -32,14 +31,14 @@ classdef Arena < handle
         a_velocities = [];
         t            = 0;               % current time
         collisions   = 0;               % Counts the colissions
-        c_pos;                          % desired swarm centre position
         axes;                           % Axes handle
         simId;                          % Simulation identifier
         circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
         noise_u;
         noise_v;
         distance_cost = [];
-        indiRate      = 30;
+        indiRate      = 512;
+        field         = struct('type','bucket');
     end
     
     methods
@@ -78,7 +77,6 @@ classdef Arena < handle
             obj.a_positions     = zeros(nT+1,obj.nAgents,3);
             obj.a_headings      = zeros(nT+1,obj.nAgents,2);
             obj.a_velocities    = zeros(nT+1,obj.nAgents,3);
-            obj.c_pos           = zeros(nT,3);
             % Start simulation
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
@@ -90,7 +88,6 @@ classdef Arena < handle
             end
             for ti = 1:nT
                 obj.t               = ti;
-                obj.c_pos(ti,:)     = feval(obj.c_fun,ti*obj.dt);   % Calculate centroid position
                 [neighbours,dAbs]      = obj.detectNeighbours(ti);     % Calculate agents in each others FOV cone & save collisions
                 if obj.boc == 1
                     if sum(obj.collisions(ti,:)) > 0
@@ -106,7 +103,7 @@ classdef Arena < handle
                 for i = 1:obj.nAgents
                     a_n_mat                       = find(neighbours(i,:)>0);
                     distances                     = dAbs(i,a_n_mat);
-                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,obj.c_pos(ti,:),reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances); %#ok<FNDSB>
+                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances); %#ok<FNDSB>
                 end
                 v_d             = obj.indiGuidance(v_d);
                 obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
@@ -214,6 +211,35 @@ classdef Arena < handle
                 end
                 obj.size = obj.size .* u;   % Save the (optionally) updated size
             end
+            % Pass the relevant field characteristics to each agent
+            nrFields    = length(obj.field);
+            fieldAgents = obj.chunkSplit(1:obj.nAgents, nrFields);
+            for i=1:nrFields
+                for a=fieldAgents(i,fieldAgents(i,:)>0)
+                   obj.agents{a}.field_type     = obj.field(i).type;
+                   obj.agents{a}.field_varargin = struct2cell(obj.field(i).varargin);
+                   if isfield(obj.field(i),'c_fun')
+                       obj.agents{a}.c_fun = obj.field(i).c_fun;
+                   else
+                       if isfield(obj.field(i),'c_pos')
+                            obj.agents{a}.c_pos = obj.field(i).c_pos;
+                       end
+                   end
+               end
+            end
+        end
+        
+        function b = chunkSplit(~, a, n)
+            ceilR       = ceil(length(a)/n);
+            modR        = ceilR * n - length(a);
+            if modR == 0
+                b           = reshape(a(1:end),ceilR,[]);
+            else
+                b           = reshape(a(1:ceilR*(n-1)),[],n-1);
+                b(:,end+1)     = zeros(1,ceilR);
+                b(1:ceilR-modR,end) = a(ceilR*(n-1)+1:end); 
+            end
+            b =b';
         end
         
         function initSimulation(obj)
@@ -246,9 +272,10 @@ classdef Arena < handle
             sigma_u     = sigma_w / (0.177 + 0.000823 * 10)^(0.4);
             sigma_v     = sigma_u;
             V           = 0.5 * obj.agents{1}.v_max;
-            Lu          = 10 * 1 / (0.177 + 0.000823*1)^(1.2);
+            Lu          = 1 / (0.177 + 0.000823*1)^(1.2);
             Lv          = Lu; % 0.5 * Lu?
-            gt          = 0:obj.dt/round(obj.indiRate*obj.dt):(obj.T - obj.dt);
+            indiRuns    = round(obj.indiRate * obj.dt);
+            gt          = 0:obj.dt/indiRuns:(obj.T);
             wu          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(obj.indiRate*obj.dt));
             wv          = randn(obj.nAgents, length(gt))./sqrt(obj.dt/round(obj.indiRate*obj.dt));
             C           = [ 1 0 ];
@@ -321,7 +348,7 @@ classdef Arena < handle
             pos_update                  = zeros(obj.nAgents,3);
             tmpVel                      = reshape(obj.a_velocities(max(obj.t-1,1),:,:),[obj.nAgents 3]);
             if obj.t > 1
-                noise = [obj.noise_u(:,obj.t*(indiRuns-1)) obj.noise_v(:,obj.t*(indiRuns-1))];
+                noise = [obj.noise_u(:,(obj.t-1)*(indiRuns)) obj.noise_v(:,(obj.t-1)*(indiRuns))];
             else
                 noise = [0 0];
             end
@@ -338,7 +365,8 @@ classdef Arena < handle
                 sp_accel_x  = min(6,max(-6,(sp_accel_x)));
                 sp_accel_y  = min(6,max(-6,(sp_accel_y)));
                 prev_noise  = noise;
-                noise       = [obj.noise_u(:,obj.t*(indiRuns-1)+i) obj.noise_v(:,obj.t*(indiRuns-1)+i)];
+
+                noise       = [obj.noise_u(:,(obj.t-1)*(indiRuns)+i) obj.noise_v(:,(obj.t-1)*(indiRuns)+i)];
                 tmpVel(:,1) = tmpVel(:,1) + (noise(:,1) - prev_noise(:,1)) + obj.dt .* 1./indiRuns .* sp_accel_x;
                 tmpVel(:,2) = tmpVel(:,2) + (noise(:,2) - prev_noise(:,2)) + obj.dt .* 1./indiRuns .* sp_accel_y;
                 %tmpVel(:,3)= tmpVel + sp_accel_z;

@@ -4,6 +4,7 @@ function [varargout] = sim_calc_cost( simPar, genome, makeVideo, returnArena )
 rng('default');
 distanceCost    = 0;
 collisionCost   = 0;
+velocityCost    = 0;
 for s=1:simPar.trialSize
     % Simulation options
     if ~isfield(simPar,'mission')
@@ -28,6 +29,7 @@ for s=1:simPar.trialSize
     uArena.nnAgents             = simPar.nnAgents;
     uArena.polyAgents           = simPar.polyAgents;
     uArena.sinusoidAgents       = simPar.sinusoidAgents;
+    uArena.field                = simPar.field;
     % Simulation dependant options
     if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
         simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
@@ -51,10 +53,10 @@ for s=1:simPar.trialSize
     % Simulate
     uArena.Simulate();
     % Calculate cost
-%     for j=1:simPar.nAgents
-%         velocityCost = velocityCost + uArena.agents{j}.vel_cost;
-%         distanceCost = distanceCost + uArena.agents{j}.dist_cost;
-%     end
+    for j=1:simPar.nAgents
+        velocityCost = velocityCost + uArena.agents{j}.vel_cost;
+        %distanceCost = distanceCost + uArena.agents{j}.dist_cost;
+    end
     %uArena.agents{1}.plotGlobalAttraction(-7:0.1:7,-7:0.1:7);
     dcX             = 0:1/(simPar.simTime * simPar.fps):1;
     dcX(1)          = [];
@@ -68,14 +70,14 @@ for s=1:simPar.trialSize
     end
 end
 % Normalize cost wrt simulation parameters
-%  velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize * simPar.nAgents);
 collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 % costStruct      = struct();
 % costStruct.velocityCost     = velocityCost;
 % costStruct.distanceCost     = distanceCost;
 % costStruct.collisionCost    = collisionCost;
-varargout{1}                     = collisionCost + distanceCost;
+varargout{1}                     = collisionCost + distanceCost + velocityCost;
 if returnArena
     varargout{2}                     = uArena;
 end
