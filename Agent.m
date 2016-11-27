@@ -164,7 +164,7 @@ classdef Agent < handle
             else
                 spiral_gain = 6;
             end
-            g_i             = inputArgs{2} * min(0.5,(0.25 + band_width_gain*(pos_n-inputArgs{1})^2)) * rotz(inputArgs{3} * (90 + min(90,max(-90,spiral_gain*(inputArgs{1} - pos_n))))) * 1/pos_n * [-pos(1); -pos(2); 0];
+            g_i             = inputArgs{2} * min(0.9,(0.5 + band_width_gain*(pos_n-inputArgs{1})^2)) * rotz(inputArgs{3} * (90 + min(90,max(-90,spiral_gain*(inputArgs{1} - pos_n))))) * 1/pos_n * [-pos(1); -pos(2); 0];
             g_i             = g_i';
         end
         
