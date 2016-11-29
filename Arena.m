@@ -37,6 +37,7 @@ classdef Arena < handle
         noise_u;
         noise_v;
         distance_cost = [];
+        seperation_cost = [];
         indiRate      = 512;
         field         = struct('type','bucket');
     end
@@ -83,6 +84,7 @@ classdef Arena < handle
             
             t_ar                = zeros(nT,1);  % Array containing timestep calculation time
             obj.distance_cost   = zeros(nT,1);
+            obj.seperation_cost = zeros(nT,1);
             if obj.print>0
                 iterT = tic;  % Start timer for first iteration
             end
@@ -322,17 +324,20 @@ classdef Arena < handle
             % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
             if obj.t > 0
                 tmp_cost        = 0;
+                tmp_sep_cost    = 0;
                 sigma           = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
                 dCostIndices    = dAbs < obj.agents{1}.cam_range;
                 for i=1:obj.nAgents
                     dCostMat        = dAbs(i,dCostIndices(i,:));
                     dCostnAgents    = length(dCostMat);
                     if dCostnAgents == 0
-                        dCostMat = obj.agents{1}.cam_range;
+                        tmp_sep_cost    = tmp_sep_cost + 1;
+                    else
+                        tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                     end
-                    tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                 end
-                obj.distance_cost(obj.t) = tmp_cost;
+                obj.distance_cost(obj.t)    = tmp_cost;
+                obj.seperation_cost(obj.t)  = tmp_sep_cost;
             end
             angles      = obj.smallAngle(headMap + obj.agents{1}.cam_dir(1) - atan2(reshape(rij_y,[obj.nAgents obj.nAgents]),reshape(rij_x,[obj.nAgents obj.nAgents]))); % Calculate angles
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij_z),sqrt(squeeze(rij_x.^2)+squeeze(rij_y.^2))); %calculates the pitch angle

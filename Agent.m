@@ -148,7 +148,7 @@ classdef Agent < handle
         function g_i = bucketField(obj, pos, inputArgs)
             % pos, seperation_distance, v_max
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
-            g_i             = (1.1 - 1 / (1 + exp(6 / (1.1 * bucket_radius) * (norm(pos(1:2)) - (1.1 * bucket_radius) )))) * 0.25 * inputArgs{2} / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_i             = (1 - 1 / (1 + exp(8 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2} / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
         end
         
         function g_i = circleField(~, pos, inputArgs)

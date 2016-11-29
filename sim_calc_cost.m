@@ -4,6 +4,7 @@ function [varargout] = sim_calc_cost( simPar, genome, makeVideo, returnArena )
 rng('default');
 distanceCost    = 0;
 collisionCost   = 0;
+seperationCost  = 0;
 velocityCost    = 0;
 for s=1:simPar.trialSize
     % Simulation options
@@ -64,6 +65,7 @@ for s=1:simPar.trialSize
     dcW             = dcW' / sum(dcW);
     distanceCost    = distanceCost  + sum(dcW .* uArena.distance_cost);
     collisionCost   = collisionCost + sum(sum(uArena.collisions));
+    seperationCost  = seperationCost + sum(uArena.seperation_cost);
     % Create video (optional)
     if makeVideo
         createVideo(uArena);
@@ -73,11 +75,16 @@ end
 velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize * simPar.nAgents);
 collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+seperationCost  = simPar.seperation_cost * seperationCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 % costStruct      = struct();
 % costStruct.velocityCost     = velocityCost;
 % costStruct.distanceCost     = distanceCost;
 % costStruct.collisionCost    = collisionCost;
-varargout{1}                     = collisionCost + distanceCost + velocityCost;
+%velocityCost
+%distanceCost
+%collisionCost
+%seperationCost
+varargout{1}                     = seperationCost + collisionCost + distanceCost + velocityCost;
 if returnArena
     varargout{2}                     = uArena;
 end
