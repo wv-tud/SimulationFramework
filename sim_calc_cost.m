@@ -1,4 +1,4 @@
-function [varargout] = sim_calc_cost( simPar, genome, makeVideo, returnArena )
+function [varargout] = sim_calc_cost( simPar, genome, makeVideo)
 %UNTITLED Simulate according to simPar and calculate cost
 %   For use with ga toolbox
 rng('default');
@@ -72,20 +72,20 @@ for s=1:simPar.trialSize
     end
 end
 % Normalize cost wrt simulation parameters
-velocityCost    = simPar.velocity_cost * velocityCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost * distanceCost / (simPar.trialSize * simPar.nAgents);
-collisionCost   = simPar.collision_cost * collisionCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-seperationCost  = simPar.seperation_cost * seperationCost / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-% costStruct      = struct();
-% costStruct.velocityCost     = velocityCost;
-% costStruct.distanceCost     = distanceCost;
-% costStruct.collisionCost    = collisionCost;
-%velocityCost
-%distanceCost
-%collisionCost
-%seperationCost
-varargout{1}                     = seperationCost + collisionCost + distanceCost + velocityCost;
-if returnArena
-    varargout{2}                     = uArena;
+velocityCost    = simPar.velocity_cost      * velocityCost      / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+distanceCost    = simPar.distance_cost      * distanceCost      / (simPar.trialSize * simPar.nAgents);
+collisionCost   = simPar.collision_cost     * collisionCost     / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+seperationCost  = simPar.seperation_cost    * seperationCost    / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+varargout{1}    = seperationCost + collisionCost + distanceCost + velocityCost;
+if nargout > 1
+    varargout{2}                    = uArena;
+    if nargout > 2
+        costStruct                  = struct();
+        costStruct.velocityCost     = velocityCost;
+        costStruct.distanceCost     = distanceCost;
+        costStruct.collisionCost    = collisionCost;
+        costStruct.seperationCost   = seperationCost;
+        varargout{3}                = costStruct;
+    end
 end
 end

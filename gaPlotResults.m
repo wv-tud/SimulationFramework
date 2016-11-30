@@ -1,4 +1,4 @@
-function state = gaPlotAgentFunction(simPar, ~,state,flag)
+function state = gaPlotResults(simPar, options,state,flag)
 %GAPLOTBESTINDIV Plots the best individual.
 %   STATE = GAPLOTBESTINDIV(OPTIONS,STATE,FLAG) plots the best 
 %   individual's genome as a histogram, with the number of bins
@@ -39,6 +39,32 @@ tmp_agent.seperation_range  = simPar.seperation_range;
 x                           = 0:0.05:tmp_agent.cam_range;
 switch flag
     case 'init'
+        %% Plot field
+        subplot(2,2,1);
+        hold on;
+        simPar.type             = 'pinciroli';
+        simPar.t                = 1/simPar.fps;
+        [simPar.nnAgents,simPar.polyAgents,simPar.sinusoidAgents] = deal(0);
+        [~,sArena]              = sim_calc_cost(simPar,[0.12 0.12], false);
+        agentIndices            = sArena.chunkSplit(1:sArena.nAgents,length(simPar.field));
+        for i=1:length(simPar.field)
+            sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-simPar.size(1)/2:0.1:simPar.size(1)/2,-simPar.size(2)/2:0.1:simPar.size(2)/2, false);
+        end
+        %% Plot best score
+        H = subplot(2,2,2);
+        hold on;
+        set(gca,'xlim',[0,options.MaxGenerations+1]);
+        xlabel('Generation','interp','none');
+        ylabel('Fitness value','interp','none');
+        plotBest = plot(state.Generation,min(state.Score),'.k');
+        set(plotBest,'Tag','gaplotbestf');
+        plotMean = plot(state.Generation,meanf(state.Score),'.b');
+        set(plotMean,'Tag','gaplotmean');
+        title(['Best: ',' Mean: '],'interp','none');
+        grid minor;
+        hold on;
+        %% Plot agent function
+        subplot(2,2,[3 4]);
         hold on;
         plot([x(1) x(end)],[simPar.v_max simPar.v_max],'--','Color','black');
         plot([x(1) x(end)],[-simPar.v_max -simPar.v_max],'--','Color','black');
@@ -48,7 +74,6 @@ switch flag
         y = tmp_agent.getAgentFunction(x);
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
-        hold off;
         grid minor;
         set(gca,'xlim',[0, tmp_agent.cam_range])
         set(gca,'ylim',[-1.5 * simPar.v_max, 1.5 * simPar.v_max])
@@ -56,6 +81,39 @@ switch flag
         xlabel('Distance [m]','interp','none');
         ylabel('Velocity response [m/s]','interp','none');
     case 'iter'
+        %% Plot best score
+        subplot(2,2,2);
+        best        = min(state.Score);
+        m           = meanf(state.Score);
+        plotBest    = findobj(get(gca,'Children'),'Tag','gaplotbestf');
+        plotMean    = findobj(get(gca,'Children'),'Tag','gaplotmean');
+        newX        = [get(plotBest,'Xdata') state.Generation];
+        newY        = [get(plotBest,'Ydata') best];
+        bestCol     = newY;
+        set(plotBest,'Xdata',newX, 'Ydata',newY);
+        newY        = [get(plotMean,'Ydata') m];
+        set(plotMean,'Xdata',newX, 'Ydata',newY);
+        set(get(gca,'Title'),'String',sprintf('Best: %g Mean: %g',best,m));
+        set(gca,'xlim',[0,state.Generation]);
+        set(gca,'ylim',[max(0,min(best-0.1,best-std(bestCol))),max(best+0.1,best+std(bestCol))]);
+        %% Plot agent function
+        subplot(2,2,[3 4]);
         h = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunction');
         set(h,'Ydata',tmp_agent.getAgentFunction(x));
+    case 'done'
+        hold off
+        %% Plot best score
+        LegnD = legend('Best fitness','Mean fitness');
+        set(LegnD,'FontSize',8);
+end
+end
+
+%------------------------------------------------
+function m = meanf(x)
+nans = isnan(x);
+x(nans) = 0;
+n = sum(~nans);
+n(n==0) = NaN; % prevent divideByZero warnings
+% Sum up non-NaNs, and divide by the number of non-NaNs.
+m = sum(x) ./ n;
 end

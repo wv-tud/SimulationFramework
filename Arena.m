@@ -9,7 +9,7 @@ classdef Arena < handle
         mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 2.5;               % m/s
+        gustVelocity = 1.0;               % m/s
         addAgents    = 0;
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
@@ -311,7 +311,7 @@ classdef Arena < handle
             posMap      = reshape(meshgrid(obj.a_positions(t,:,:),ones(obj.nAgents,1)),obj.nAgents,obj.nAgents,3);
             rij_x  = shiftdim(reshape(posMap(:,:,1),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,1)); % Create rij matrix rij(i,j,[x y z])
             rij_y  = shiftdim(reshape(posMap(:,:,2),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,2));
-            rij_z  = shiftdim(reshape(posMap(:,:,3),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,3));
+            rij_z  = 0; %shiftdim(reshape(posMap(:,:,3),[obj.nAgents obj.nAgents])',2)-(posMap(:,:,3));
             dAbs        = sqrt(rij_x.^2+rij_y.^2+rij_z.^2) + diag(ones(1,obj.nAgents))*obj.agents{1}.cam_range; % Calculate abs distance (i==j can't see itself)
             if t>1
                 col_mat     = find(sum(dAbs < obj.agents{1}.collision_range,2)>0); % Detect and save collisions

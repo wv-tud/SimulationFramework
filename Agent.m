@@ -14,7 +14,7 @@ classdef Agent < handle
         cam_dir             = [0 -30/180*pi()];     % Camera direction [radian yaw, radian pitch]
         cam_fov             = 152/180*pi();         % Camera FOV [radian]
         cam_range           = 4;                    % Camera range [m]
-        cam_acc             = 0.85;                 % Accuracy of Camera
+        cam_acc             = 0.95;                 % Accuracy of Camera
         % Non-optional properties
         neighbours          = {};                   % Structure to save neighbours
         u_d_decom           = {};                   % Structure to save decomposed v_d into seperate signals
@@ -79,7 +79,7 @@ classdef Agent < handle
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
-            m_neighbours    = [];
+            m_neighbours    = zeros(0,6);
             newStart        = 0;
             if obj.t > 1
                 prev_neighbours = obj.neighbours{obj.t-1};
@@ -89,12 +89,14 @@ classdef Agent < handle
                     newStart        = size(m_neighbours,1);
                 end
             end
-            m_neighbours    = [m_neighbours; zeros(length(neighbours),6)];
-            pos_noise           = randn(length(neighbours),3) .* (1 - obj.cam_acc) .* agent_distances';
-            dist_noise          = randn(length(neighbours),1) .* (1 - obj.cam_acc) .* agent_distances';
-            for j = 1:length(neighbours)
-                j_pos                       = agent_positions(neighbours(j),:)' + pos_noise(j,:)';
-                m_neighbours(newStart+j,:)  = [neighbours(j) obj.t j_pos' agent_distances(j)+dist_noise(j)]; % Not yet in memory - insert
+            if ~isempty(neighbours)
+                m_neighbours    = [m_neighbours; zeros(length(neighbours),6)];
+                dist_noise      = randn(length(neighbours),1) .* (1 - obj.cam_acc) .* agent_distances';
+                pos_noise       = dist_noise .* (obj.pos' - agent_positions(neighbours,:)) ./ agent_distances';
+                for j = 1:length(neighbours)
+                    j_pos                       = agent_positions(neighbours(j),:)' - pos_noise(j,:)';
+                    m_neighbours(newStart+j,:)  = [neighbours(j) obj.t j_pos' agent_distances(j)+dist_noise(j)]; % Not yet in memory - insert
+                end
             end
         end
         
@@ -109,7 +111,8 @@ classdef Agent < handle
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents
             end
             u_d     = g_i + L_i;                                    % Sum to find u_d
-            u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2 + u_d(3)^2);
+            u_d(3)  = 0;
+            u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2);% + u_d(3)^2);
             if u_d_n > obj.v_max
                 g_i = g_i / u_d_n * obj.v_max;
                 L_i = L_i / u_d_n * obj.v_max;
@@ -140,7 +143,7 @@ classdef Agent < handle
                 g       = obj.bucketField(x, obj.field_varargin);
                 otherwise
                     obj.field_type      = 'bucket';
-                    obj.field_varargin  = cell(obj.seperation_range + obj.collision_range,obj.v_max);
+                    obj.field_varargin  = cell(obj.seperation_range + obj.collision_range,0.9*obj.v_max,0.1*obj.v_max);
                     g                   = global_interaction(x, obj.field_varargin);
             end
         end
@@ -148,7 +151,9 @@ classdef Agent < handle
         function g_i = bucketField(obj, pos, inputArgs)
             % pos, seperation_distance, v_max
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
-            g_i             = (1 - 1 / (1 + exp(8 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2} / norm(pos(1:2)) * [-pos(1) -pos(2) 0];
+            g_in            = (1 - 1 / (1 + exp(8 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2};
+            g_id            = [-pos(1) -pos(2) 0]./norm(pos(1:2));
+            g_i             = max(inputArgs{3},min(inputArgs{2},g_in)) * g_id;
         end
         
         function g_i = circleField(~, pos, inputArgs)
@@ -174,14 +179,24 @@ classdef Agent < handle
             x           = reshape(x,[],1);
             y           = reshape(y,[],1);
             if ~isempty(varargin)
-                if isa(varargin{1},'function_handle')
-                elseif isa(varargin{1},'double')
-                    if length(varargin{1})==3
-                        cc_pos  = varargin{1};
-                        x       = x - cc_pos(1);
-                        y       = y - cc_pos(2);
+                for i=1:length(varargin)
+                    if isa(varargin{i},'function_handle')
+                        
+                    elseif isa(varargin{i},'double')
+                        if length(varargin{i})==3
+                            cc_pos  = varargin{i};
+                            x       = x - cc_pos(1);
+                            y       = y - cc_pos(2);
+                        end
+                    elseif isa(varargin{i},'logical')
+                        if varargin{i}
+                            F       = figure();
+                        else
+                            F       = false;
+                        end
                     end
                 end
+                    
             end
             Rij         = [x y zeros(size(x))];
             g_i         = zeros(length(Rij),3);
@@ -192,7 +207,9 @@ classdef Agent < handle
             u       = reshape(g_i(:,1),length(y_arr),length(x_arr))./vNorm;
             v       = reshape(g_i(:,2),length(y_arr),length(x_arr))./vNorm;
             w       = reshape(g_i(:,3),length(y_arr),length(x_arr))./vNorm;
-            F       = figure();
+            if ~exist('F','var')
+                F = figure();
+            end
             hold on;
             surf(x_arr,y_arr, vNorm,'EdgeColor','none','LineStyle','none');
             quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
