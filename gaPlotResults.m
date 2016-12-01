@@ -26,16 +26,17 @@ switch(agentType)
     case 'simpleNN'
         fakeNet             = struct();
         fakeNet.numLayers   = length(simPar.nnSize);
-        fakeNet.IW          = state.Population(i,simPar.net.i_IW+1);
-        fakeNet.LW          = state.Population(i,simPar.net.i_LW+1);
-        fakeNet.IB          = state.Population(i,simPar.net.i_IB+1);
-        fakeNet.OB          = state.Population(i,simPar.net.i_OB+1);
+        fakeNet.IW          = state.Population(i,simPar.net.i_IW+2);
+        fakeNet.LW          = state.Population(i,simPar.net.i_LW+2);
+        fakeNet.IB          = state.Population(i,simPar.net.i_IB+2);
+        fakeNet.OB          = state.Population(i,simPar.net.i_OB+2);
         tmp_agent           = Agent_simpleNN(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
         tmp_agent.net       = fakeNet;
         tmp_agent.v_max     = simPar.v_max;
 end
 tmp_agent.genome            = state.Population(i,:);
 tmp_agent.seperation_range  = simPar.seperation_range;
+tmp_agent.cam_range         = simPar.camera_range;
 x                           = 0:0.05:tmp_agent.cam_range;
 switch flag
     case 'init'
@@ -43,12 +44,14 @@ switch flag
         subplot(2,2,1);
         hold on;
         simPar.type             = 'pinciroli';
-        simPar.t                = 1/simPar.fps;
+        simPar.simTime          = 1/simPar.fps;
         [simPar.nnAgents,simPar.polyAgents,simPar.sinusoidAgents] = deal(0);
-        [~,sArena]              = sim_calc_cost(simPar,[0.12 0.12], false);
+        [~,sArena]              = sim_calc_cost(simPar,[0.12 0 0.12], false);
         agentIndices            = sArena.chunkSplit(1:sArena.nAgents,length(simPar.field));
+        margin                  = 1.5;
+        reso                    = size(1) / 10;
         for i=1:length(simPar.field)
-            sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-simPar.size(1)/2:0.1:simPar.size(1)/2,-simPar.size(2)/2:0.1:simPar.size(2)/2, false);
+            sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
         end
         %% Plot best score
         H = subplot(2,2,2);

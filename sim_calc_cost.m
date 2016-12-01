@@ -40,13 +40,13 @@ for s=1:simPar.trialSize
         case 'simpleNN'
             fakeNet             = struct();
             fakeNet.numLayers   = length(simPar.nnSize);
-            fakeNet.IW          = genome(simPar.net.i_IW+1);
-            fakeNet.LW          = genome(simPar.net.i_LW+1);
-            fakeNet.IB          = genome(simPar.net.i_IB+1);
-            fakeNet.OB          = genome(simPar.net.i_OB+1);
-            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
+            fakeNet.IW          = genome(simPar.net.i_IW+2);
+            fakeNet.LW          = genome(simPar.net.i_LW+2);
+            fakeNet.IB          = genome(simPar.net.i_IB+2);
+            fakeNet.OB          = genome(simPar.net.i_OB+2);
+            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
         otherwise
-            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'v_max',simPar.v_max, 'genome', genome);
+            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome);
     end
     % Save/Display options
     uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line
@@ -64,8 +64,8 @@ for s=1:simPar.trialSize
     dcW             = sqrt(1-(dcX-1).^2);
     dcW             = dcW' / sum(dcW);
     distanceCost    = distanceCost  + sum(dcW .* uArena.distance_cost);
-    collisionCost   = collisionCost + sum(sum(uArena.collisions));
-    seperationCost  = seperationCost + sum(uArena.seperation_cost);
+    collisionCost   = collisionCost + (1 - uArena.t/(2 * simPar.simTime * simPar.fps)) * sum(sum(uArena.collisions));
+    seperationCost  = seperationCost + sum(dcW .* uArena.seperation_cost.^2);
     % Create video (optional)
     if makeVideo
         createVideo(uArena);
@@ -75,7 +75,7 @@ end
 velocityCost    = simPar.velocity_cost      * velocityCost      / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 distanceCost    = simPar.distance_cost      * distanceCost      / (simPar.trialSize * simPar.nAgents);
 collisionCost   = simPar.collision_cost     * collisionCost     / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
-seperationCost  = simPar.seperation_cost    * seperationCost    / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
+seperationCost  = simPar.seperation_cost    * seperationCost    / (simPar.nAgents * simPar.trialSize);
 varargout{1}    = seperationCost + collisionCost + distanceCost + velocityCost;
 if nargout > 1
     varargout{2}                    = uArena;

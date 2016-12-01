@@ -9,8 +9,8 @@ classdef visualArena < handle
         p_head      = 2;                    % Print heading line: 0=off;1=range;2=circle
         p_circ      = 0;                    % Print circle of 0.5m around every agent
         p_label     = 1;                    % Print agent id
-        p_mov_axe   = 0;                    % Print using moving axes
-        p_axe_lim   = [-52.5 52.5 -34 34];  % Limits zooming on the axe [xlim ylim]
+        p_mov_axe   = 1;                    % Print using moving axes
+        p_axe_lim;%   = [-52.5 52.5 -34 34];  % Limits zooming on the axe [xlim ylim]
         diskType    = 'hdd';                % Whether to write to HDD or SSD
         resolution  = [1000 1000];          % Figure resolution (width will be adapted to aspect ratio of p_axe_lim)
         print       = 1;                    % Print progress to command window
@@ -52,6 +52,7 @@ classdef visualArena < handle
             obj.arenaVars.dt                = arena.dt;
             obj.arenaVars.T                 = arena.T;
             obj.arenaVars.field             = arena.field;
+            obj.arenaVars.boc               = arena.boc;
             
             
         end
@@ -134,6 +135,11 @@ classdef visualArena < handle
                     text        = strcat(['' char(repmat('*',1,round(perc*20))) char(repmat('.',1,20-round(perc*20))) ' ' num2str(round(perc*100)) '%% (' obj.sec2time(ETA) ') ' num2str(round(obj.arenaVars.dt/mean(t_ar(1:ti)),2)) 'x\n']);
                     fprintf (text);
                 end
+                if obj.arenaVars.boc
+                    if sum( obj.arenaVars.collisions(ti,:)) > 0
+                        break;
+                    end
+                end
             end
             if obj.frame_save~=1
                 close(obj.movie);
@@ -150,7 +156,7 @@ classdef visualArena < handle
                 hold on;
                 obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', 'black', 'LineStyle', '-', 'LineWidth',1);
                 if obj.p_circ==1
-                    obj.fh_circles = viscircles(pos(:,1:2), 0.5*ones(obj.arenaVars.nAgents,1)+0.5*obj.arenaVars.collision_range, 'Color', 'black', 'LineStyle', '--', 'LineWidth',1);
+                    obj.fh_circles = viscircles(pos(:,1:2), ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range, 'Color', 'black', 'LineStyle', '--', 'LineWidth',1);
                 end
                 if obj.p_head==1
                     [cx,cy,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1),zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);

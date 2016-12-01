@@ -15,10 +15,10 @@ classdef Agent_sinusoid < Agent
         end
 
         function y = local_interaction(obj,x)
-            y       = obj.genome(2) .* ones(size(x));
+            y       = obj.genome(3) .* ones(size(x));
             sigma   = obj.seperation_range + obj.collision_range;
-            for l=1:(length(obj.genome)-2)/3
-                y = y + obj.genome(3+(l-1)*3) .* sin(2*pi()*obj.genome(4+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(5+(l-1)*3));
+            for l=1:(length(obj.genome)-3)/3
+                y = y + obj.genome(4+(l-1)*3) .* sin(2*pi()*obj.genome(5+(l-1)*3) * (x/sigma) + 2*pi()*obj.genome(6+(l-1)*3));
             end
         end
     end

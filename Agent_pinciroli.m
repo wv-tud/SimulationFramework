@@ -16,7 +16,7 @@ classdef Agent_pinciroli < Agent
         
         function y = local_interaction(obj,x)
             sigma   = (obj.seperation_range + obj.collision_range) ./ x;
-            y       = 12 * obj.genome(2) ./ x .* (sigma.^12 - sigma.^6);
+            y       = 12 * obj.genome(3) ./ x .* (sigma.^12 - sigma.^6);
         end
     end
     

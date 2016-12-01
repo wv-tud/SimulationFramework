@@ -55,18 +55,19 @@ classdef Agent < handle
             obj.vel                     = [0 0 0];
             obj.heading                 = head;
             obj.collisions              = zeros(obj.T/obj.dt+1,1);
+            obj.neighbours              = cell(obj.T/obj.dt,1);
         end
         
         function [v_d,theta,phi] = Update(obj,t,pos,heading,vel,neighbours,agent_positions,agent_distances)
             obj.t                   = t;
             obj.pos                 = pos;
             if isa(obj.c_fun,'function_handle')
-                obj.c_pos               = feval(obj.c_fun, obj.t * obj.dt);
+                obj.c_pos               = feval(obj.c_fun, t * obj.dt);
             end
             obj.vel                 = vel;
             obj.heading             = heading;
-            obj.neighbours{obj.t}   = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances);                     % Using detected neighbours build the matrix
-            [v_d,g_d]               = obj.calculate_vd(obj.neighbours{obj.t}(:,3:6));
+            obj.neighbours{t}       = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances);                     % Using detected neighbours build the matrix
+            [v_d,g_d]               = obj.calculate_vd(obj.neighbours{t}(:,3:6));
             v_dhat                  = v_d/norm(v_d);
             if obj.swarmMode == 1
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
@@ -110,7 +111,9 @@ classdef Agent < handle
                 nL_i    = obj.local_interaction(nMag')';
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents
             end
-            u_d     = g_i + L_i;                                    % Sum to find u_d
+            %u_d     = L_i + (obj.v_max - obj.genome(2) * min(obj.v_max,sqrt(L_i(1)^2+L_i(2)^2)))/obj.v_max * g_i;                                    % Sum to find u_d
+            u_d     = L_i + max(0, obj.v_max - obj.genome(2) * sqrt(L_i(1)^2+L_i(2)^2))^2/(obj.v_max^2) * g_i;
+            
             u_d(3)  = 0;
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2);% + u_d(3)^2);
             if u_d_n > obj.v_max
@@ -151,7 +154,7 @@ classdef Agent < handle
         function g_i = bucketField(obj, pos, inputArgs)
             % pos, seperation_distance, v_max
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
-            g_in            = (1 - 1 / (1 + exp(8 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2};
+            g_in            = (1 - 1 / (1 + exp(6 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2};
             g_id            = [-pos(1) -pos(2) 0]./norm(pos(1:2));
             g_i             = max(inputArgs{3},min(inputArgs{2},g_in)) * g_id;
         end
@@ -184,9 +187,7 @@ classdef Agent < handle
                         
                     elseif isa(varargin{i},'double')
                         if length(varargin{i})==3
-                            cc_pos  = varargin{i};
-                            x       = x - cc_pos(1);
-                            y       = y - cc_pos(2);
+                            obj.c_pos  = varargin{i};
                         end
                     elseif isa(varargin{i},'logical')
                         if varargin{i}
