@@ -50,9 +50,8 @@ switch flag
         agentIndices            = sArena.chunkSplit(1:sArena.nAgents,length(simPar.field));
         margin                  = 1.5;
         reso                    = size(1) / 10;
-        for i=1:length(simPar.field)
-            sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
-        end
+        i = 1;
+        sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
         %% Plot best score
         H = subplot(2,2,2);
         hold on;

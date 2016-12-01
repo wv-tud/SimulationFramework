@@ -53,8 +53,12 @@ classdef visualArena < handle
             obj.arenaVars.T                 = arena.T;
             obj.arenaVars.field             = arena.field;
             obj.arenaVars.boc               = arena.boc;
-            
-            
+            arena.moving_axes
+            if arena.moving_axes
+                obj.p_mov_axe = 1;
+            else
+                obj.p_mov_axe = 0;
+            end
         end
         
         function filename = build(obj)

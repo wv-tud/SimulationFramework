@@ -16,7 +16,7 @@ classdef Agent_polynomial < Agent
         
         function y = local_interaction(obj,x)
             sigma   = obj.seperation_range + obj.collision_range;
-            y       = 1 ./ x .* sum(repmat(sigma ./ x',1,length(obj.genome)-1).^(0:(length(obj.genome)-3)) .* obj.genome(3:end),2)';
+            y       = 1 ./ x .* sum(repmat(sigma ./ x',1,length(obj.genome)-2).^(0:(length(obj.genome)-3)) .* obj.genome(3:end),2)';
         end
     end
     

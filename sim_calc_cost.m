@@ -25,6 +25,7 @@ for s=1:simPar.trialSize
     uArena.init                 = simPar.init;
     uArena.size                 = simPar.size;
     uArena.boc                  = simPar.boc;
+    uArena.moving_axes          = simPar.moving_axes;
     % What type of agents
     uArena.nAgents              = simPar.nAgents;
     uArena.nnAgents             = simPar.nnAgents;

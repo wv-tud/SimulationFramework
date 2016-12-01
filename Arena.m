@@ -40,6 +40,7 @@ classdef Arena < handle
         seperation_cost = [];
         indiRate      = 512;
         field         = struct('type','bucket');
+        moving_axes   = false;
     end
     
     methods

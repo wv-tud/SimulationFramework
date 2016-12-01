@@ -10,7 +10,6 @@ function [  ] = createVideo( uArena )
     visObj.p_head       = 2; 
     visObj.p_label      = 1;
     visObj.resolution   = [720 720];
-    visObj.p_mov_axe    = 1;
     visObj.p_axe_lim    = [];%[-uArena.size(1) uArena.size(1) -uArena.size(2) uArena.size(2)];  % Cyberzoo
     fprintf(strcat(['VisualArena: Initialised videoWriter\n'])); 
     movT = tic; visObj.build(); tm = toc(movT);
