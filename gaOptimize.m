@@ -1,10 +1,12 @@
 global agentType alt_gads;
+lat_warning     = false;
+v_max_warning   = false;
+acc_sat_warning = false;
 % Set general simulation parameters
 simPar = struct(...
-    'field_type',           'bucket',...
     'type',                 '',...
-    'simTime',              60, ...
-    'trialSize',            5, ...
+    'simTime',              10, ...
+    'trialSize',            1, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -14,89 +16,26 @@ simPar = struct(...
     'collision_range',      0.3, ...
     'camera_range',         4, ...
     'init',                 'random', ...
-    'size',                 [60 60], ...
-    'v_max',                15, ...
+    'size',                 [20 20], ...
+    'v_max',                3.5, ...
     'distance_cost',        10, ...
     'velocity_cost',        2.5e-1, ...
     'collision_cost',       1e8, ...
     'seperation_cost',      100, ...
     'nnSize',               [10 10], ...
     'moving_axes',          false,...
-    'boc',                  0 ...
+    'boc',                  1 ...
     );
 simPar.velocity_cost    = simPar.velocity_cost / simPar.v_max^2;
-%% x-line tracking
-xline                  = struct(...
-                            'type',     'bucket'                    ,...
-                            'c_pos',    [0 0 10]                    ,...
-                            'c_fun', @(t) [50*sin(1/50*4*t) 0 10],...
-                            'varargin', struct(                     ...
-                                'seperation',   simPar.seperation_range + simPar.collision_range,...
-                                'v_max',         5,...
-                                'v_min',         1.0...
-                            )...
-                          );
-%% Bucket
-buck                    = struct(...
-                            'type',     'bucket'                    ,...
-                            'c_pos',    [0 0 10]                    ,...
-                            'varargin', struct(                     ...
-                                'seperation',   simPar.seperation_range + simPar.collision_range,...
-                                'v_max',         5,...
-                                'v_min',         0.5...
-                            )...
-                          );
-%% Two bucket circles
-two_buck_circ(1)        = struct(...
-                            'type',     'bucket'                    ,...
-                            'c_pos',    [0 0 10]                    ,...
-                            'c_fun', @(t) [-15*cos(1/15*3*t)-15 15*sin(1/15*3*t) 10],...
-                            'varargin', struct(                     ...
-                                'seperation',   simPar.seperation_range + simPar.collision_range,...
-                                'v_max',         5,...
-                                'v_min',         0.5...
-                            )...
-                          );
-two_buck_circ(2)        = struct(...
-                            'type',     'bucket'                    ,...
-                            'c_pos',    [0 0 10]                    ,...
-                            'c_fun', @(t) [15*cos(1/15*3*t)+15 15*sin(1/15*3*t) 10],...
-                            'varargin', struct(                     ...
-                                'seperation',   simPar.seperation_range + simPar.collision_range,...
-                                'v_max',         5,...
-                                'v_min',         0.5...
-                            )...
-                          );
-%% Two circles
-two_circ(1)            = struct(                                   ...
-                            'type',     'circle'                    ,...
-                            'c_pos',    [-8 0 10]                    ,...
-                            'varargin', struct(                     ...
-                                'radius',           7.5               ,...
-                                'v_max',            5    ,...
-                                'direction',        1               ,...
-                                'bandwidth_gain',   0.01            ,...
-                                'spiral_gain',      6               ...
-                            )                                       ...
-                          );   
-two_circ(2)            = struct(                                   ...
-                            'type',     'circle'                    ,...
-                            'c_pos',    [8 0 10]                    ,...
-                            'varargin', struct(                     ...
-                                'radius',           7.5               ,...
-                                'v_max',            5    ,...
-                                'direction',        -1              ,...
-                                'bandwidth_gain',   0.01            ,...
-                                'spiral_gain',      6               ...
-                            )                                       ...
-                          ); 
+
+load_global_fields;
 
 simPar.mission          = {'cyberzooBucket'};
 simulations             = {};
 i                       = 1;
 % NN optimization (two buck circ)
 simulations{i}          = struct();
-simulations{i}.popSize  = 75;
+simulations{i}.popSize  = 15;
 simulations{i}.type     = 'simpleNN';
 simulations{i}.nnSize   = 25;
 switch(length(simulations{i}.nnSize))
@@ -119,83 +58,87 @@ simulations{i}.LB(IB+2) = -3;
 simulations{i}.UB(IB+2) =  3;
 simulations{i}.LB(OB+2) = -4;
 simulations{i}.UB(OB+2) =  4;
-simulations{i}.field    = two_buck_circ;
+simulations{i}.field    = two_point_circ;
 i = i + 1;
-% NN optimization (two circ)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = two_circ;
-i = i + 1;
-% NN optimization (xline)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = xline;
-i = i + 1;
-% NN optimization (bucket)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = buck;
-i = i + 1;
-
-% Pinciroli optimization (two buck circ)
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'pinciroli';
-simulations{i}.LB       = zeros(1,3);
-simulations{i}.UB       = [0.5 10 0.5];
-simulations{i}.field    = two_buck_circ;
-i = i + 1;
-% Pinciroli optimization (two circ)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = two_circ;
-i = i + 1;
-% Pinciroli optimization (xline)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = xline;
-i = i + 1;
-% Pinciroli optimization (bucket)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = buck;
-i = i + 1;
-
-% Polynomial optimization (two buck circ)
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'polynomial';
-simulations{i}.LB       = [0    0 -5*ones(1,13)];
-simulations{i}.UB       = [0.5 10  5*ones(1,13)];
-simulations{i}.field    = two_buck_circ;
-i = i + 1;
-% Polynomial optimization (two circ)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = two_circ;
-i = i + 1;
-% Polynomial optimization (xline)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = xline;
-i = i + 1;
-% Polynomial optimization (bucket)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = buck;
-i = i + 1;
-
-% Sinusoid optimization (two buck circ)
-simulations{i}          = struct();
-simulations{i}.popSize  = 75;
-simulations{i}.type     = 'sinusoid';
-simulations{i}.LB       = [0    0 -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
-simulations{i}.UB       = [0.5 10  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
-simulations{i}.field    = two_buck_circ;
-i = i + 1;
-% Sinusoid optimization (two circ)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = two_circ;
-i = i + 1;
-% Sinusoid optimization (xline)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = xline;
-i = i + 1;
-% Sinusoid optimization (bucket)
-simulations{i}          = simulations{i-1};
-simulations{i}.field    = buck;
-i = i + 1;
+% % NN optimization (two bucket circ)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = two_buck_circ;
+% i = i + 1;
+% % NN optimization (two circ)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = two_circ;
+% i = i + 1;
+% % NN optimization (xline)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = xline;
+% i = i + 1;
+% % NN optimization (bucket)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = buck;
+% i = i + 1;
+% 
+% % Pinciroli optimization (two buck circ)
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'pinciroli';
+% simulations{i}.LB       = zeros(1,3);
+% simulations{i}.UB       = [0.5 10 0.5];
+% simulations{i}.field    = two_buck_circ;
+% i = i + 1;
+% % Pinciroli optimization (two circ)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = two_circ;
+% i = i + 1;
+% % Pinciroli optimization (xline)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = xline;
+% i = i + 1;
+% % Pinciroli optimization (bucket)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = buck;
+% i = i + 1;
+% 
+% % Polynomial optimization (two buck circ)
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'polynomial';
+% simulations{i}.LB       = [0    0 -5*ones(1,13)];
+% simulations{i}.UB       = [0.5 10  5*ones(1,13)];
+% simulations{i}.field    = two_buck_circ;
+% i = i + 1;
+% % Polynomial optimization (two circ)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = two_circ;
+% i = i + 1;
+% % Polynomial optimization (xline)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = xline;
+% i = i + 1;
+% % Polynomial optimization (bucket)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = buck;
+% i = i + 1;
+% 
+% % Sinusoid optimization (two buck circ)
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 75;
+% simulations{i}.type     = 'sinusoid';
+% simulations{i}.LB       = [0    0 -0.5  -15  0 0  -15  0 0  -15  0 0  -15  0 0];
+% simulations{i}.UB       = [0.5 10  0.5   15  1 1   15 50 1   15  1 1   15  1 1];
+% simulations{i}.field    = two_buck_circ;
+% i = i + 1;
+% % Sinusoid optimization (two circ)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = two_circ;
+% i = i + 1;
+% % Sinusoid optimization (xline)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = xline;
+% i = i + 1;
+% % Sinusoid optimization (bucket)
+% simulations{i}          = simulations{i-1};
+% simulations{i}.field    = buck;
+% i = i + 1;
 
 %% Run all simulations
 x_store         = cell(length(simulations),1);
@@ -239,9 +182,25 @@ for si = 1:length(simulations)
             simPar.net.i_LW         = LW;
     end
     %% Check lattice ratio (also checked inside sim_calc_cost but throws warnings)
-    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
+    if ~lat_warning && simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
         simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
         fprintf('WARNING: lattice ratio >= 2, limiting camera range to %.2fm\n', simPar.camera_range);
+        lat_warning = true;
+    end
+    %% Check v_max vs a_max (6m/s^2)
+    % Suppose 2 drones moving at each other at v_max
+    % total v_diff          = 2*v_max
+    % total deceleration    = 2 * a_max
+    brake_distance = (2 * simPar.v_max)^2 / (2 * 2 * 6);    % v^2 / (2 * a)
+    if ~v_max_warning && brake_distance > (simPar.camera_range - simPar.collision_range)
+        fprintf('WARNING: maximum braking distance exceeds camera range (%.2fm vs. %.2fm)\n', brake_distance, simPar.camera_range);
+        v_max_warning = true;
+    end
+    %% Check v_diff_max vs a_max
+    saturation_v_max = 0.5 * 6 / 1.8;     %  v_diff = a_max / indi_speed_gain (2 * v_max = v_diff)
+    if ~acc_sat_warning && saturation_v_max/simPar.v_max < 1
+        fprintf('WARNING: acceleration saturation point at %.2fm/s (%.0f%% of v_max)\n', saturation_v_max, saturation_v_max / simPar.v_max * 100);
+        acc_sat_warning = true;
     end
     %% Do a sample simulation to get an estimate of the time
     pT              = tic;
@@ -265,7 +224,7 @@ for si = 1:length(simulations)
     alt_gads = true;
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB),[],[],[],[],simulations{si}.LB,simulations{si}.UB,[],options);
     %% save genome to file
-    save(strcat(['./data/ga-' simulations{si}.type '-' simulations{si}.field.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores');
+    save(strcat(['./data/ga-' simulations{si}.type '-' simulations{si}.field.type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores','simPar');
     %% Genetic optimization finished, sim the winner and make video
     x_store{si}         = x;
     simPar_store{si}    = simPar;
@@ -273,6 +232,6 @@ end
 %% Create videos
 for i = 1:length(simulations)
     close all;
-    agentType = simPar_store{i}.type;
-    [cost,uArena,costStruct] = sim_calc_cost(simPar_store{i}, x_store{i}, true);
+    agentType                   = simPar_store{i}.type;
+    [cost,uArena,costStruct]    = sim_calc_cost(simPar_store{i}, x_store{i}, true);
 end

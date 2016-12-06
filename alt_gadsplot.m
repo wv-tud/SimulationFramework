@@ -205,6 +205,7 @@ plotState.(solver).position = get(fig,'Position');
 %-------------------------------------------------------
 function [state,optimvalues] = callOnePlotFcn(fname,plotfcn,state,varargin)
 %
+pause
 optimvalues = varargin{2};
 switch lower(strtrim(fname))
   case {'pattern search','multistart','globalsearch','particleswarm'}

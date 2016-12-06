@@ -144,6 +144,8 @@ classdef Agent < handle
                 g       = obj.circleField(x, obj.field_varargin); 
                 case 'bucket'
                 g       = obj.bucketField(x, obj.field_varargin);
+                case 'point'
+                g       = obj.pointField(x, obj.field_varargin);
                 otherwise
                     obj.field_type      = 'bucket';
                     obj.field_varargin  = cell(obj.seperation_range + obj.collision_range,0.9*obj.v_max,0.1*obj.v_max);
@@ -151,11 +153,17 @@ classdef Agent < handle
             end
         end
         
+        function g_i = pointField(~, pos, inputArgs)
+            % pos, v_max
+            g_i             = inputArgs{1} * [-pos(1) -pos(2) 0]./sqrt(pos(1)^2+pos(2)^2);
+        end
+        
         function g_i = bucketField(obj, pos, inputArgs)
-            % pos, seperation_distance, v_max
+            % pos, seperation_distance, v_max, v_min
+            pos_n           = sqrt(pos(1)^2+pos(2)^2);
             bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
-            g_in            = (1 - 1 / (1 + exp(6 / (1 * bucket_radius) * (norm(pos(1:2)) - (1 * bucket_radius) )))) * inputArgs{2};
-            g_id            = [-pos(1) -pos(2) 0]./norm(pos(1:2));
+            g_in            = (1 - 1 / (1 + exp(6 / (1 * bucket_radius) * (pos_n - (1 * bucket_radius) )))) * inputArgs{2};
+            g_id            = [-pos(1) -pos(2) 0]./pos_n;
             g_i             = max(inputArgs{3},min(inputArgs{2},g_in)) * g_id;
         end
         

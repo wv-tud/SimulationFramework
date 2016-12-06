@@ -39,7 +39,7 @@ classdef Arena < handle
         distance_cost = [];
         seperation_cost = [];
         indiRate      = 512;
-        field         = struct('type','bucket');
+        field         = struct('name','default_bucket','type','bucket');
         moving_axes   = false;
     end
     
@@ -106,7 +106,7 @@ classdef Arena < handle
                 for i = 1:obj.nAgents
                     a_n_mat                       = find(neighbours(i,:)>0);
                     distances                     = dAbs(i,a_n_mat);
-                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances); %#ok<FNDSB>
+                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances);
                 end
                 v_d             = obj.indiGuidance(v_d);
                 obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
@@ -140,10 +140,17 @@ classdef Arena < handle
             else
                 cAgents = 0;
             end
+            nrFields            = length(obj.field);
+            fieldAgents         = obj.chunkSplit(cAgents+1:obj.nAgents, nrFields);
+            agentFieldCentres   = [];
+            agentsPerField      = sum(fieldAgents'>0);
+            for f=1:nrFields
+                agentFieldCentres(end+1:end+agentsPerField(f),1:3) = repmat(obj.field(f).c_pos,agentsPerField(f),1);
+            end
             if strcmp(obj.init,'random')
                 pos         = unifrnd(-0.5,0.5,newAgents,2);
-                pos(:,1)    = pos(:,1)*obj.size(1);
-                pos(:,2)    = pos(:,2)*obj.size(2);
+                pos(:,1)    = pos(:,1)*obj.size(1) + agentFieldCentres(:,1);
+                pos(:,2)    = pos(:,2)*obj.size(2) + agentFieldCentres(:,2);
                 head        = unifrnd(0,2*pi(),newAgents,1);
             elseif strcmp(obj.init,'rect')
                 s = factor(newAgents);
@@ -154,14 +161,14 @@ classdef Arena < handle
                 xs      = prod(s(1:end-1));
                 ys      = s(end);
                 [x,y]   = meshgrid((obj.size(1)/xs:obj.size(1)/xs:obj.size(1))-0.5*obj.size(1)/xs,(obj.size(2)/ys:obj.size(2)/ys:obj.size(2))-0.5*obj.size(2)/ys);
-                pos     = [reshape(x,numel(x),1)-0.5*obj.size(1) reshape(y,numel(y),1)-0.5*obj.size(2)];
+                pos     = [reshape(x,numel(x),1)-0.5*obj.size(1)+agentFieldCentres(:,1) reshape(y,numel(y),1)-0.5*obj.size(2)+agentFieldCentres(:,2)];
                 head    = unifrnd(0,2*pi(),newAgents,1);
             elseif strcmp(obj.init,'square')
                 xs      = ceil(sqrt(newAgents));
                 ys      = xs;
                 [x,y]   = meshgrid((obj.size(1)/xs:obj.size(1)/xs:obj.size(1))-0.5*obj.size(1)/xs,(obj.size(2)/ys:obj.size(2)/ys:obj.size(2))-0.5*obj.size(2)/ys);
                 pos     = [reshape(x,numel(x),1)-0.5*obj.size(1) reshape(y,numel(y),1)-0.5*obj.size(2)];
-                pos     = pos(1:newAgents,:);
+                pos     = pos(1:newAgents,:)+agentFieldCentres(:,1:2);
                 head    = unifrnd(0,2*pi(),newAgents,1);
             end
             for i=1:obj.sinusoidAgents
@@ -206,8 +213,8 @@ classdef Arena < handle
                     id = unique(i);
                     for i=1:length(id)
                         new_pos                         = unifrnd(-0.5*u,0.5*u,1,2);
-                        new_pos(:,1)                    = new_pos(:,1)*obj.size(1);
-                        new_pos(:,2)                    = new_pos(:,2)*obj.size(2);
+                        new_pos(:,1)                    = new_pos(:,1)*obj.size(1) + agentFieldCentres(id(i),1);
+                        new_pos(:,2)                    = new_pos(:,2)*obj.size(2) + agentFieldCentres(id(i),2);
                         obj.agents{id(i)}.pos(1,1:2)    = new_pos;
                         obj.a_positions(1,id(i),1:2)    = new_pos;
                     end
@@ -215,8 +222,6 @@ classdef Arena < handle
                 obj.size = obj.size .* u;   % Save the (optionally) updated size
             end
             % Pass the relevant field characteristics to each agent
-            nrFields    = length(obj.field);
-            fieldAgents = obj.chunkSplit(1:obj.nAgents, nrFields);
             for i=1:nrFields
                 for a=fieldAgents(i,fieldAgents(i,:)>0)
                    obj.agents{a}.field_type     = obj.field(i).type;
@@ -247,11 +252,8 @@ classdef Arena < handle
         
         function initSimulation(obj)
             % Naming
-            if isa(obj,'Mission')
-                obj.name    =  sprintf('%s-%0.0f-%s-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.typeName, obj.nAgents,obj.mission_type,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
-            else
-                obj.name    =  sprintf('%s-%0.0f-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.typeName, obj.nAgents,obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
-            end
+            obj.name    =  sprintf('%s-%0.0f-%s-%0.0fs-%0.1fms-%0.1fm-%0.0fm2-v1',obj.typeName, obj.nAgents, obj.field(1).name, obj.T,obj.agents{1}.v_max,obj.agents{1}.seperation_range,obj.size(1)*obj.size(2)*4); % Generate name based on current arena settings
+            
             file_clear  = 0;
             version     = 1;
             while file_clear == 0 % Rename to -v1,v2,...,vN when file exists
@@ -367,9 +369,11 @@ classdef Arena < handle
                 %speed_sp_z = pos_z_err * guidance_indi_pos_gain;
                 sp_accel_x  = (speed_sp_x - tmpVel(:,1)) .* guidance_indi_speed_gain;
                 sp_accel_y  = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
-                %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;
-                sp_accel_x  = min(6,max(-6,(sp_accel_x)));
-                sp_accel_y  = min(6,max(-6,(sp_accel_y)));
+                %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;                
+                sp_accel_n  = sqrt(sp_accel_x.^2+sp_accel_y.^2);
+                sp_accel_x  = sp_accel_x .* min(sp_accel_n, 6) ./ sp_accel_n;
+                sp_accel_y  = sp_accel_y .* min(sp_accel_n, 6) ./ sp_accel_n;
+                
                 prev_noise  = noise;
 
                 noise       = [obj.noise_u(:,(obj.t-1)*(indiRuns)+i) obj.noise_v(:,(obj.t-1)*(indiRuns)+i)];

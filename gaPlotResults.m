@@ -50,8 +50,8 @@ switch flag
         agentIndices            = sArena.chunkSplit(1:sArena.nAgents,length(simPar.field));
         margin                  = 1.5;
         reso                    = size(1) / 10;
-        i = 1;
-        sArena.agents{agentIndices(i,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
+        l = 1;
+        sArena.agents{agentIndices(l,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
         %% Plot best score
         H = subplot(2,2,2);
         hold on;
@@ -83,8 +83,10 @@ switch flag
         xlabel('Distance [m]','interp','none');
         ylabel('Velocity response [m/s]','interp','none');
     case 'iter'
+        pause
         %% Plot best score
         subplot(2,2,2);
+        hold on;
         best        = min(state.Score);
         m           = meanf(state.Score);
         plotBest    = findobj(get(gca,'Children'),'Tag','gaplotbestf');
@@ -100,6 +102,7 @@ switch flag
         set(gca,'ylim',[max(0,min(best-0.1,best-std(bestCol))),max(best+0.1,best+std(bestCol))]);
         %% Plot agent function
         subplot(2,2,[3 4]);
+        hold on;
         h = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunction');
         set(h,'Ydata',tmp_agent.getAgentFunction(x));
     case 'done'
