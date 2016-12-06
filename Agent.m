@@ -112,7 +112,7 @@ classdef Agent < handle
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents
             end
             %u_d     = L_i + (obj.v_max - obj.genome(2) * min(obj.v_max,sqrt(L_i(1)^2+L_i(2)^2)))/obj.v_max * g_i;                                    % Sum to find u_d
-            u_d     = L_i + max(0, obj.v_max - obj.genome(2) * sqrt(L_i(1)^2+L_i(2)^2))^2/(obj.v_max^2) * g_i;
+            u_d     = L_i + obj.loglo_int(sqrt(L_i(1)^2+L_i(2)^2)) * g_i;
             
             u_d(3)  = 0;
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2);% + u_d(3)^2);
@@ -128,6 +128,12 @@ classdef Agent < handle
         
         function y = local_interaction(x)
             y       = x;
+        end
+        
+        function y = loglo_int(obj, L_i_n)
+            % Returns a 0-1 scalar of how much of g_i is taken into account
+            % dependant on the size of L_i
+            y = min(obj.v_max,max(0, obj.v_max - obj.genome(2) * L_i_n)).^2./(obj.v_max^2);
         end
         
         function X = getAgentFunction(obj,x)

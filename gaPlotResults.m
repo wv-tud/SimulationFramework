@@ -1,4 +1,4 @@
-function state = gaPlotResults(simPar, options,state,flag)
+function state = gaPlotResults(simPar, options,state,flag, optimType)
 %GAPLOTBESTINDIV Plots the best individual.
 %   STATE = GAPLOTBESTINDIV(OPTIONS,STATE,FLAG) plots the best 
 %   individual's genome as a histogram, with the number of bins
@@ -11,11 +11,24 @@ function state = gaPlotResults(simPar, options,state,flag)
 
 %   Copyright 2003-2015 The MathWorks, Inc.
 global agentType;
-if  size(state.Score,2) > 1
-    title('Best Individual Plot: not available','interp','none');
-    return;
+switch optimType
+    case 'ga'
+        if  size(state.Score,2) > 1
+            title('Best Individual Plot: not available','interp','none');
+            return;
+        end
+        [~,i] = min(state.Score);
+        genome = state.Population(i,:);
+        curScore        = state.Score;
+        curGen          = state.Generation;
+        curMeanScore    = meanf(curScore);
+        curBestScore    = min(curScore);
+    case 'fmincon'
+        genome          = state;
+        curBestScore    = options.fval;
+        curGen          = options.iteration;
 end
-[~,i] = min(state.Score);
+
 switch(agentType)
     case 'pinciroli'
         tmp_agent = Agent_pinciroli(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
@@ -26,15 +39,15 @@ switch(agentType)
     case 'simpleNN'
         fakeNet             = struct();
         fakeNet.numLayers   = length(simPar.nnSize);
-        fakeNet.IW          = state.Population(i,simPar.net.i_IW+2);
-        fakeNet.LW          = state.Population(i,simPar.net.i_LW+2);
-        fakeNet.IB          = state.Population(i,simPar.net.i_IB+2);
-        fakeNet.OB          = state.Population(i,simPar.net.i_OB+2);
+        fakeNet.IW          = genome(simPar.net.i_IW+2);
+        fakeNet.LW          = genome(simPar.net.i_LW+2);
+        fakeNet.IB          = genome(simPar.net.i_IB+2);
+        fakeNet.OB          = genome(simPar.net.i_OB+2);
         tmp_agent           = Agent_simpleNN(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
         tmp_agent.net       = fakeNet;
         tmp_agent.v_max     = simPar.v_max;
 end
-tmp_agent.genome            = state.Population(i,:);
+tmp_agent.genome            = genome;
 tmp_agent.seperation_range  = simPar.seperation_range;
 tmp_agent.cam_range         = simPar.camera_range;
 x                           = 0:0.05:tmp_agent.cam_range;
@@ -55,14 +68,17 @@ switch flag
         %% Plot best score
         H = subplot(2,2,2);
         hold on;
-        set(gca,'xlim',[0,options.MaxGenerations+1]);
         xlabel('Generation','interp','none');
         ylabel('Fitness value','interp','none');
-        plotBest = plot(state.Generation,min(state.Score),'.k');
+        plotBest = plot(curGen,curBestScore,'.k');
         set(plotBest,'Tag','gaplotbestf');
-        plotMean = plot(state.Generation,meanf(state.Score),'.b');
-        set(plotMean,'Tag','gaplotmean');
-        title(['Best: ',' Mean: '],'interp','none');
+        if strcmp(optimType,'ga')
+            plotMean = plot(curGen,curMeanScore,'.b');
+            set(plotMean,'Tag','gaplotmean');
+            title(['Best: ',' Mean: '],'interp','none');
+        else
+            title('Best: ','interp','none');
+        end
         grid minor;
         hold on;
         %% Plot agent function
@@ -76,6 +92,8 @@ switch flag
         y = tmp_agent.getAgentFunction(x);
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
+        h2 = plot(x,tmp_agent.loglo_int(abs(y)).*simPar.v_max,'--','Color','red');
+        set(h2,'Tag','gaPlotAgentFunctionLoGlo');
         grid minor;
         set(gca,'xlim',[0, tmp_agent.cam_range])
         set(gca,'ylim',[-1.5 * simPar.v_max, 1.5 * simPar.v_max])
@@ -83,33 +101,42 @@ switch flag
         xlabel('Distance [m]','interp','none');
         ylabel('Velocity response [m/s]','interp','none');
     case 'iter'
-        pause
         %% Plot best score
         subplot(2,2,2);
         hold on;
-        best        = min(state.Score);
-        m           = meanf(state.Score);
         plotBest    = findobj(get(gca,'Children'),'Tag','gaplotbestf');
-        plotMean    = findobj(get(gca,'Children'),'Tag','gaplotmean');
-        newX        = [get(plotBest,'Xdata') state.Generation];
-        newY        = [get(plotBest,'Ydata') best];
+        newX        = [get(plotBest,'Xdata') curGen];
+        newY        = [get(plotBest,'Ydata') curBestScore];
         bestCol     = newY;
         set(plotBest,'Xdata',newX, 'Ydata',newY);
-        newY        = [get(plotMean,'Ydata') m];
-        set(plotMean,'Xdata',newX, 'Ydata',newY);
-        set(get(gca,'Title'),'String',sprintf('Best: %g Mean: %g',best,m));
-        set(gca,'xlim',[0,state.Generation]);
-        set(gca,'ylim',[max(0,min(best-0.1,best-std(bestCol))),max(best+0.1,best+std(bestCol))]);
+        if strcmp(optimType,'ga')
+            plotMean    = findobj(get(gca,'Children'),'Tag','gaplotmean');
+            newY        = [get(plotMean,'Ydata') curMeanScore];
+            set(plotMean,'Xdata',newX, 'Ydata',newY);
+            set(get(gca,'Title'),'String',sprintf('Best: %g Mean: %g',curBestScore,curMeanScore));
+        else
+            set(get(gca,'Title'),'String',sprintf('Best: %g',curBestScore));
+        end
+        set(gca,'xlim',[0,max(1,curGen)]);
+        set(gca,'ylim',[max(0,min(curBestScore-0.1,curBestScore-std(bestCol))),max(curBestScore+0.1,curBestScore+std(bestCol))]);
         %% Plot agent function
         subplot(2,2,[3 4]);
         hold on;
+        y = tmp_agent.getAgentFunction(x);
         h = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunction');
-        set(h,'Ydata',tmp_agent.getAgentFunction(x));
+        set(h,'Ydata',y);
+        h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo');
+        set(h2,'Ydata',tmp_agent.loglo_int(abs(y)).*simPar.v_max);
     case 'done'
         hold off
         %% Plot best score
-        LegnD = legend('Best fitness','Mean fitness');
-        set(LegnD,'FontSize',8);
+        if strcmp(optimType,'ga')
+            LegnD = legend('Best fitness','Mean fitness');
+            set(LegnD,'FontSize',8);
+        end
+end
+if strcmp(optimType,'fmincon')
+    state = false;
 end
 end
 
