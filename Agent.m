@@ -19,8 +19,6 @@ classdef Agent < handle
         cam_fov             = 152/180*pi();         % Camera FOV [radian]
         cam_range           = 4;                    % Camera range [m]
         cam_acc             = 0.95;                 % Accuracy of Camera
-        % Cost
-        vel_cost            = 0;
         % Arena variables
         dt                  = 0;
         t                   = 0;
@@ -56,7 +54,7 @@ classdef Agent < handle
             obj.neighbours              = zeros(0,6);
         end
         
-        function [v_d,theta,phi] = Update(obj,t,pos,heading,vel,neighbours,agent_positions,agent_distances)
+        function [v_d,theta,phi,g_d] = Update(obj,t,pos,heading,vel,neighbours,agent_positions,agent_distances)
             obj.t                   = t;
             obj.pos                 = pos;
             if isa(obj.c_fun,'function_handle')
@@ -121,7 +119,6 @@ classdef Agent < handle
             d_i             = -obj.genome(1)*(u_d - obj.prev_vd);   % Calculate dissipative energy
             v_d             = u_d + d_i;
             obj.prev_vd     = v_d;
-            obj.vel_cost    = obj.vel_cost + (g_i(1) - v_d(1))^2 + (g_i(2) - v_d(2))^2;
         end
         
         function y = local_interaction(x)

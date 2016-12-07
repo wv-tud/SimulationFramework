@@ -38,6 +38,7 @@ classdef Arena < handle
         noise_v         = [];
         distance_cost   = [];
         seperation_cost = [];
+        velocity_cost   = [];
         circle_packing_radius = [];        % Placeholder for bucket diameter multipliers calculated on init
         agent_conf      = struct();        % Additional agent configuration
     end
@@ -63,6 +64,7 @@ classdef Arena < handle
             t_ar                = zeros(nT,1);  % Array containing timestep calculation time
             obj.distance_cost   = zeros(nT,1);
             obj.seperation_cost = zeros(nT,1);
+            obj.velocity_cost   = zeros(nT,1);
             if obj.print>0
                 iterT = tic;  % Start timer for first iteration
             end
@@ -78,15 +80,35 @@ classdef Arena < handle
                     end
                 end
                 v_d     = zeros(obj.nAgents,3);
+                g_d     = zeros(obj.nAgents,3);
                 theta   = zeros(obj.nAgents,1);
                 phi     = zeros(obj.nAgents,1);
                 for i = 1:obj.nAgents
-                    a_n_mat                       = find(neighbours(i,:)>0);
-                    distances                     = dAbs(i,a_n_mat);
-                    [v_d(i,:),theta(i),phi(i)]    = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances);
+                    a_n_mat                             = find(neighbours(i,:)>0);
+                    distances                           = dAbs(i,a_n_mat);
+                    [v_d(i,:),theta(i),phi(i),g_d(i,:)] = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances);
                 end
-                v_d             = obj.indiGuidance(v_d);
-                obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_d;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
+                v_real          = obj.indiGuidance(v_d);
+                % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
+                if obj.t > 0
+                    tmp_cost        = 0;
+                    tmp_sep_cost    = 0;
+                    sigma           = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                    dCostIndices    = dAbs < obj.agents{1}.cam_range;
+                    for i=1:obj.nAgents
+                        dCostMat        = dAbs(i,dCostIndices(i,:));
+                        dCostnAgents    = length(dCostMat);
+                        if dCostnAgents == 0
+                            tmp_sep_cost    = tmp_sep_cost + 1;
+                        else
+                            tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
+                        end
+                    end
+                    obj.distance_cost(obj.t)    = tmp_cost;
+                    obj.seperation_cost(obj.t)  = tmp_sep_cost;
+                    obj.velocity_cost(obj.t)    = sum((g_d(:,1) - v_real(:,1)).^2 + (g_d(:,2) - v_real(:,2)).^2);
+                end
+                obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_real;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
                 obj.a_headings(ti+1,:,:)    = [phi theta];
                 if obj.print==1
                     t_ar(ti)    = toc(iterT);                       % Get elapsed time
@@ -308,25 +330,6 @@ classdef Arena < handle
                 for i=1:length(col_mat)
                     obj.collisions(t,col_mat(i))            = 1; % Count total nr of collisions
                 end
-            end
-            %obj.distance_cost = obj.distance_cost + sum(sum(abs(((obj.agents{1}.collision_range + obj.agents{1}.seperation_range) ./ dAbs).^2 - 1) .* (cumsum(diag(ones(1,obj.nAgents)))' - diag(ones(1,obj.nAgents)))));
-            % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
-            if obj.t > 0
-                tmp_cost        = 0;
-                tmp_sep_cost    = 0;
-                sigma           = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
-                dCostIndices    = dAbs < obj.agents{1}.cam_range;
-                for i=1:obj.nAgents
-                    dCostMat        = dAbs(i,dCostIndices(i,:));
-                    dCostnAgents    = length(dCostMat);
-                    if dCostnAgents == 0
-                        tmp_sep_cost    = tmp_sep_cost + 1;
-                    else
-                        tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
-                    end
-                end
-                obj.distance_cost(obj.t)    = tmp_cost;
-                obj.seperation_cost(obj.t)  = tmp_sep_cost;
             end
             angles      = obj.smallAngle(headMap + obj.agents{1}.cam_dir(1) - atan2(reshape(rij_y,[obj.nAgents obj.nAgents]),reshape(rij_x,[obj.nAgents obj.nAgents]))); % Calculate angles
             %anglesZ    = zeros(obj.nAgents,obj.nAgents,1) - obj.agents{1}.cam_dir(2) + atan2(squeeze(rij_z),sqrt(squeeze(rij_x.^2)+squeeze(rij_y.^2))); %calculates the pitch angle
