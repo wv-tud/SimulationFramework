@@ -6,11 +6,9 @@ classdef Arena < handle
         % Simulation parameters
         name         = 'defaultArena';  % Arena name (used for movie file)
         typeName     = 'default';       % Defines arena type name
-        mission_type = 'default';       % Placeholder for mission extention class
         T            = 30;              % Simulation time
         dt           = 0.1;             % timestep
-        gustVelocity = 1.0;               % m/s
-        addAgents    = 0;
+        gustVelocity = 1.0;             % m/s
         nAgents      = 5;               % Number of agents to be spawned
         nnAgents     = 0;               % Number of NN agents of agents to be spawned
         polyAgents   = 0;               % Number of poly Agents
@@ -21,8 +19,6 @@ classdef Arena < handle
         size         = [10 10];         % Size of spawn arena [x y][m]
         diskType     = 'hdd';           % Check filenames existing on HDD or SSD
         % Simulation options
-        save         = 0;               % save output to .mat file
-        print        = 1;               % Print waitbar + ETA
         agent_conf   = struct();        % Additional agent configuration
         % Simulation non-optional parameters
         agents       = {};              % Agent struct
@@ -40,7 +36,13 @@ classdef Arena < handle
         seperation_cost = [];
         indiRate      = 512;
         field         = struct('name','default_bucket','type','bucket');
+        
+        
+        % Boolean options
+        addAgents    = false;
         moving_axes   = false;
+        save         = false;               % save output to .mat file
+        print        = true;               % Print waitbar + ETA
     end
     
     methods
@@ -219,7 +221,9 @@ classdef Arena < handle
                         obj.a_positions(1,id(i),1:2)    = new_pos;
                     end
                 end
-                obj.size = obj.size .* u;   % Save the (optionally) updated size
+                obj.size(1) = max(obj.size(1),max(max(abs(squeeze(obj.a_positions(1,:,1))))));
+                obj.size(2) = max(obj.size(2),max(max(abs(squeeze(obj.a_positions(1,:,2))))));
+                %obj.size = obj.size .* u;   % Save the (optionally) updated size
             end
             % Pass the relevant field characteristics to each agent
             for i=1:nrFields

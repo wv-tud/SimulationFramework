@@ -40,6 +40,7 @@ classdef Agent < handle
         field_type          = 'bucket';
         field_varargin;
         c_fun               = 0;
+        swing_angle         = true;
     end
     
     methods
@@ -66,38 +67,47 @@ classdef Agent < handle
             end
             obj.vel                 = vel;
             obj.heading             = heading;
-            obj.neighbours{t}       = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances);                     % Using detected neighbours build the matrix
+            obj.neighbours{t}       = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances');                     % Using detected neighbours build the matrix
             [v_d,g_d]               = obj.calculate_vd(obj.neighbours{t}(:,3:6));
-            v_dhat                  = v_d/norm(v_d);
+            v_dhat                  = v_d/sqrt(v_d(1)^2+v_d(2)^2);
             if obj.swarmMode == 1
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
-                theta                   = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
+                theta                   = 0;
+                %theta                   = atan2(v_dhat(3),v_d_n);                               % Pitch angle of v_d
             else
                 phi                     = atan2(g_d(2),g_d(1));                           % Yaw angle of g_d
-                theta                   = atan2(g_d(3),0);
+                theta                   = 0;
+                %theta                   = atan2(g_d(3),0);
+            end
+            if obj.swing_angle
+                % Fake 180deg FOV
+                phi                     = phi + 0.5 * (pi() - obj.cam_fov) * sin(2 * pi() * 1/3 * obj.t * obj.dt);
             end
             obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
-            m_neighbours    = zeros(0,6);
-            newStart        = 0;
+            nrNeighbours    = length(neighbours);
             if obj.t > 1
                 prev_neighbours = obj.neighbours{obj.t-1};
                 if~isempty(prev_neighbours)
                     m_neighbours    = prev_neighbours(prev_neighbours(:,2) > (obj.t-obj.t_mem),:);                           % Select neighbours from memory which haven't degraded
-                    m_neighbours    = m_neighbours(logical(sum(m_neighbours(:,1)*ones(size(neighbours))==ones(size(m_neighbours(:,1)))*neighbours,2)==0),:);   % Only keep which we cant see
+                    m_neighbours    = m_neighbours(logical(-1 * sum(m_neighbours(:,1) == neighbours,2) + 1),:);
                     newStart        = size(m_neighbours,1);
+                    m_neighbours    = [m_neighbours; zeros(nrNeighbours,6)];
+                else
+                    newStart        = 0;
+                    m_neighbours    = zeros(nrNeighbours,6);
                 end
+            else
+                newStart        = 0;
+                m_neighbours    = zeros(nrNeighbours,6);
             end
-            if ~isempty(neighbours)
-                m_neighbours    = [m_neighbours; zeros(length(neighbours),6)];
-                dist_noise      = randn(length(neighbours),1) .* (1 - obj.cam_acc) .* agent_distances';
-                pos_noise       = dist_noise .* (obj.pos' - agent_positions(neighbours,:)) ./ agent_distances';
-                for j = 1:length(neighbours)
-                    j_pos                       = agent_positions(neighbours(j),:)' - pos_noise(j,:)';
-                    m_neighbours(newStart+j,:)  = [neighbours(j) obj.t j_pos' agent_distances(j)+dist_noise(j)]; % Not yet in memory - insert
-                end
+            if nrNeighbours > 0
+                dist_noise      = randn(nrNeighbours,1) .* (1 - obj.cam_acc) .* agent_distances;
+                pos_noise       = dist_noise .* (obj.pos' - agent_positions(neighbours,:)) ./ agent_distances;
+                j_pos           = agent_positions(neighbours,:) - pos_noise;
+                m_neighbours(newStart+1:end,:)  = [neighbours' obj.t*ones(nrNeighbours,1) j_pos agent_distances+dist_noise];
             end
         end
         
@@ -113,16 +123,14 @@ classdef Agent < handle
             end
             %u_d     = L_i + (obj.v_max - obj.genome(2) * min(obj.v_max,sqrt(L_i(1)^2+L_i(2)^2)))/obj.v_max * g_i;                                    % Sum to find u_d
             u_d     = L_i + obj.loglo_int(sqrt(L_i(1)^2+L_i(2)^2)) * g_i;
-            
-            u_d(3)  = 0;
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2);% + u_d(3)^2);
             if u_d_n > obj.v_max
                 g_i = g_i / u_d_n * obj.v_max;
                 L_i = L_i / u_d_n * obj.v_max;
                 u_d = g_i + L_i;
             end
-            d_i = -obj.genome(1)*(L_i+g_i - obj.prev_vd);   % Calculate dissipative energy
-            v_d = u_d + d_i;
+            d_i         = -obj.genome(1)*(L_i+g_i - obj.prev_vd);   % Calculate dissipative energy
+            v_d         = u_d + d_i;
             obj.prev_vd = v_d;
         end
         

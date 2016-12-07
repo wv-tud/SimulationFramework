@@ -5,8 +5,8 @@ acc_sat_warning = false;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
-    'simTime',              20, ...
-    'trialSize',            1, ...
+    'simTime',              45, ...
+    'trialSize',            3, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -35,9 +35,9 @@ simulations             = {};
 i                       = 1;
 % NN optimization (two buck circ)
 simulations{i}          = struct();
-simulations{i}.popSize  = 35;
+simulations{i}.popSize  = 75;
 simulations{i}.type     = 'simpleNN';
-simulations{i}.nnSize   = 5;
+simulations{i}.nnSize   = 15;
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
@@ -58,7 +58,7 @@ simulations{i}.LB(IB+2) = -3;
 simulations{i}.UB(IB+2) =  3;
 simulations{i}.LB(OB+2) = -4;
 simulations{i}.UB(OB+2) =  4;
-simulations{i}.field    = buck; %two_point_circ;
+simulations{i}.field    = two_point_circ;
 i = i + 1;
 % % NN optimization (two bucket circ)
 % simulations{i}          = simulations{i-1};
@@ -197,7 +197,9 @@ for si = 1:length(simulations)
         v_max_warning = true;
     end
     %% Check v_diff_max vs a_max
-    saturation_v_max = 0.5 * 6 / 1.8;     %  v_diff = a_max / indi_speed_gain (2 * v_max = v_diff)
+    % Suppose a drone moving forward at v_max, and then sets v_max backwards
+    % v_diff = a_max / indi_speed_gain (2 * v_max = v_diff)
+    saturation_v_max = 0.5 * 6 / 1.8;
     if ~acc_sat_warning && saturation_v_max/simPar.v_max < 1
         fprintf('WARNING: acceleration saturation point at %.2fm/s (%.0f%% of v_max)\n', saturation_v_max, saturation_v_max / simPar.v_max * 100);
         acc_sat_warning = true;

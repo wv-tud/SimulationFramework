@@ -39,9 +39,9 @@ switch(agentType)
     case 'simpleNN'
         fakeNet             = struct();
         fakeNet.numLayers   = length(simPar.nnSize);
-        fakeNet.IW          = genome(simPar.net.i_IW+2);
+        fakeNet.IW          = genome(simPar.net.i_IW+2)';
+        fakeNet.IB          = genome(simPar.net.i_IB+2)';
         fakeNet.LW          = genome(simPar.net.i_LW+2);
-        fakeNet.IB          = genome(simPar.net.i_IB+2);
         fakeNet.OB          = genome(simPar.net.i_OB+2);
         tmp_agent           = Agent_simpleNN(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
         tmp_agent.net       = fakeNet;

@@ -181,7 +181,7 @@ classdef visualArena < handle
                 end
                 if obj.p_label==1
                     labels = cellstr(int2str((1:obj.arenaVars.nAgents)'));
-                    obj.fh_label = text(pos(:,1),pos(:,2),labels,'Color','k','FontSize',7);
+                    obj.fh_label = text(pos(:,1)+0.5*obj.arenaVars.collision_range,pos(:,2)+0.5*obj.arenaVars.collision_range,labels,'Color','k','FontSize',7);
                 end
                 obj.fh_cpos = {};
                 for i=1:length(obj.arenaVars.field)
@@ -253,7 +253,7 @@ classdef visualArena < handle
                         end
                     end
                     if obj.p_label==1
-                        obj.fh_label(i).Position(1:2) = [pos(i,1) pos(i,2)];
+                        obj.fh_label(i).Position(1:2) = [pos(i,1) pos(i,2)]+0.5*obj.arenaVars.collision_range;
                     end
                 end
                 for i=1:length(obj.arenaVars.field)

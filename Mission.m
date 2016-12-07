@@ -3,6 +3,7 @@ classdef Mission < Arena
     %   Detailed explanation goes here
     
     properties
+        mission_type    = '';
         waypointArr     = [];
         n_ellipse       = 1;
         circle_radius   = 2;

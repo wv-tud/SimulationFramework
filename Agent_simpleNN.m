@@ -16,7 +16,7 @@ classdef Agent_simpleNN < Agent
         end
         
         function y = local_interaction(obj,x)
-            y = obj.v_max * obj.a * tansig(obj.net.OB + obj.net.LW * radbas(obj.net.IW' * obj.nnNormI(x) + obj.net.IB'));
+            y = obj.v_max * obj.a * tansig(obj.net.OB + obj.net.LW * radbas(obj.net.IW * obj.nnNormI(x) + obj.net.IB));
         end
     end
     

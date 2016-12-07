@@ -41,9 +41,9 @@ for s=1:simPar.trialSize
         case 'simpleNN'
             fakeNet             = struct();
             fakeNet.numLayers   = length(simPar.nnSize);
-            fakeNet.IW          = genome(simPar.net.i_IW+2);
+            fakeNet.IW          = genome(simPar.net.i_IW+2)';
+            fakeNet.IB          = genome(simPar.net.i_IB+2)';
             fakeNet.LW          = genome(simPar.net.i_LW+2);
-            fakeNet.IB          = genome(simPar.net.i_IB+2);
             fakeNet.OB          = genome(simPar.net.i_OB+2);
             uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
         otherwise
