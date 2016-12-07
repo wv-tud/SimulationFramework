@@ -45,9 +45,9 @@ for s=1:simPar.trialSize
             fakeNet.IB          = genome(simPar.net.i_IB+2)';
             fakeNet.LW          = genome(simPar.net.i_LW+2);
             fakeNet.OB          = genome(simPar.net.i_OB+2);
-            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
+            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'collision_range', simPar.collision_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome, 'net', fakeNet);
         otherwise
-            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome);
+            uArena.agent_conf   = struct('seperation_range', simPar.seperation_range,'collision_range', simPar.collision_range,'cam_range', simPar.camera_range,'v_max',simPar.v_max, 'genome', genome);
     end
     % Save/Display options
     uArena.print                = 0;   % Print ETA and % if larger than 1 it shown every (rounded to factor of nT) i-th percentage without erasing previous line

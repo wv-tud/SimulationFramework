@@ -4,45 +4,42 @@ classdef Arena < handle
     
     properties
         % Simulation parameters
-        name         = 'defaultArena';  % Arena name (used for movie file)
-        typeName     = 'default';       % Defines arena type name
-        T            = 30;              % Simulation time
-        dt           = 0.1;             % timestep
-        gustVelocity = 1.0;             % m/s
-        nAgents      = 5;               % Number of agents to be spawned
-        nnAgents     = 0;               % Number of NN agents of agents to be spawned
-        polyAgents   = 0;               % Number of poly Agents
-        sinusoidAgents = 0;             % Number of sinusoid Agents
-        swarmMode    = 2;               % 1= look where you go, 2= look towards global
-        init         = 'random';        % initialisation procedure ['random','rect','square']
-        boc          = 0;               % Break simulation on impact
-        size         = [10 10];         % Size of spawn arena [x y][m]
-        diskType     = 'hdd';           % Check filenames existing on HDD or SSD
-        % Simulation options
-        agent_conf   = struct();        % Additional agent configuration
-        % Simulation non-optional parameters
-        agents       = {};              % Agent struct
-        a_positions  = [];              % Vector containing agents positions
-        a_headings   = [];              % Vector containing agents headings
-        a_velocities = [];
-        t            = 0;               % current time
-        collisions   = 0;               % Counts the colissions
-        axes;                           % Axes handle
-        simId;                          % Simulation identifier
-        circle_packing_radius;          % Placeholder for bucket diameter multipliers calculated on init
-        noise_u;
-        noise_v;
-        distance_cost = [];
-        seperation_cost = [];
-        indiRate      = 512;
-        field         = struct('name','default_bucket','type','bucket');
-        
-        
+        simId           = 0;               % Simulation identifier
+        name            = 'defaultArena';  % Arena name (used for movie file)
+        typeName        = 'default';       % Defines arena type name
+        T               = 30;              % Simulation time
+        dt              = 0.1;             % timestep
+        gustVelocity    = 1.0;             % m/s
+        nAgents         = 5;               % Number of agents to be spawned
+        nnAgents        = 0;               % Number of NN agents of agents to be spawned
+        polyAgents      = 0;               % Number of poly Agents
+        sinusoidAgents  = 0;               % Number of sinusoid Agents
+        swarmMode       = 2;               % 1= look where you go, 2= look towards global
+        init            = 'random';        % initialisation procedure ['random','rect','square']
+        boc             = 0;               % Break simulation on impact
+        size            = [10 10];         % Size of spawn arena [x y][m]
+        diskType        = 'hdd';           % Check filenames existing on HDD or SSD
+        indiRate        = 512;
+        field           = struct('name','default_bucket','type','bucket');
         % Boolean options
-        addAgents    = false;
-        moving_axes   = false;
-        save         = false;               % save output to .mat file
-        print        = true;               % Print waitbar + ETA
+        addAgents       = false;
+        moving_axes     = false;
+        save            = false;           % save output to .mat file
+        print           = true;            % Print waitbar + ETA
+        % Counters
+        t               = 0;               % current time
+        % Placeholders
+        collisions      = [];              % Counts the colissions
+        agents          = {};              % Agent struct
+        a_positions     = [];              % Vector containing agents positions
+        a_headings      = [];              % Vector containing agents headings
+        a_velocities    = [];
+        noise_u         = [];
+        noise_v         = [];
+        distance_cost   = [];
+        seperation_cost = [];
+        circle_packing_radius = [];        % Placeholder for bucket diameter multipliers calculated on init
+        agent_conf      = struct();        % Additional agent configuration
     end
     
     methods
@@ -50,31 +47,10 @@ classdef Arena < handle
             % Used to initialize the Arena when new instance is created
             obj.name    = name;
             obj.simId   = name;
-            obj.circle_packing_radius = [ ...
-                1 ...
-                2 ...
-                1+2/3*sqrt(3) ...
-                1+sqrt(2) ...
-                1+sqrt(2*(1+1/sqrt(5))) ...
-                3 ...
-                3 ...
-                (1+1/sin(pi()/7)) ...
-                1+sqrt(2*(2+sqrt(2))) ...
-                3.813 ...
-                1+1/sin(pi()/9) ...
-                4.029 ...
-                2+sqrt(5) ...
-                4.328 ...
-                1+sqrt(6+2/sqrt(5)+4*sqrt(1+2/sqrt(5))) ...
-                4.615 ...
-                4.792 ...
-                1+sqrt(2)+sqrt(6) ...
-                1+sqrt(2)+sqrt(6) ...
-                5.122 ...
-                ];
         end
         
         function Simulate(obj,varargin)
+            obj.circle_packing_radius = sqrt((obj.nAgents*(obj.agent_conf.seperation_range+obj.agent_conf.collision_range)^2*sqrt(3)/2)/pi());
             nT                  = obj.T/obj.dt; % Number of timestep iterations
             % Preallocate arrays
             obj.collisions      = zeros(nT,obj.nAgents);
@@ -84,7 +60,6 @@ classdef Arena < handle
             % Start simulation
             obj.initAgents(obj.nAgents);        % Create all agents
             obj.initSimulation();               % Prepare movie,figure and variables
-            
             t_ar                = zeros(nT,1);  % Array containing timestep calculation time
             obj.distance_cost   = zeros(nT,1);
             obj.seperation_cost = zeros(nT,1);
@@ -190,8 +165,8 @@ classdef Arena < handle
                 obj.agents{cAgents+i} = obj.mergeStruct(obj.agents{cAgents+i},obj.agent_conf); % Pass agent config
             end
             obj.nAgents = cAgents + newAgents;
-            obj.a_positions(1,:,:)  = [pos  10*ones(size(pos,1),1)];
-            obj.a_headings(1,:,:)   = [head zeros(size(head,1),1)];
+            obj.a_positions(1,:,:)  = [pos  10*ones(newAgents,1)];
+            obj.a_headings(1,:,:)   = [head zeros(newAgents,1)];
             if strcmp(obj.init,'random') % Find collisions and resolve them before continuing
                 collisionFree = 0;
                 k = 1;
@@ -221,8 +196,8 @@ classdef Arena < handle
                         obj.a_positions(1,id(i),1:2)    = new_pos;
                     end
                 end
-                obj.size(1) = max(obj.size(1),max(max(abs(squeeze(obj.a_positions(1,:,1))))));
-                obj.size(2) = max(obj.size(2),max(max(abs(squeeze(obj.a_positions(1,:,2))))));
+                obj.size(1) = max(max(obj.size(1),max(max(abs(squeeze(obj.a_positions(1,:,1)))))),max(obj.size(2),max(max(abs(squeeze(obj.a_positions(1,:,2)))))));
+                obj.size(2) = obj.size(1);
                 %obj.size = obj.size .* u;   % Save the (optionally) updated size
             end
             % Pass the relevant field characteristics to each agent
@@ -236,6 +211,14 @@ classdef Arena < handle
                        if isfield(obj.field(i),'c_pos')
                             obj.agents{a}.c_pos = obj.field(i).c_pos;
                        end
+                   end
+                   switch obj.field(i).type
+                       case 'circle'
+                           obj.agents{a}.fieldFunction = @(x, field_varargin) obj.agents{a}.circleField(x, field_varargin);
+                       case 'bucket'
+                           obj.agents{a}.fieldFunction = @(x, field_varargin) obj.agents{a}.bucketField(x, field_varargin);
+                       case 'point'
+                           obj.agents{a}.fieldFunction = @(x, field_varargin) obj.agents{a}.pointField(x, field_varargin);
                    end
                end
             end
@@ -323,7 +306,6 @@ classdef Arena < handle
             if t>1
                 col_mat     = find(sum(dAbs < obj.agents{1}.collision_range,2)>0); % Detect and save collisions
                 for i=1:length(col_mat)
-                    obj.agents{col_mat(i)}.collisions(t)    = 1; % Set which agents
                     obj.collisions(t,col_mat(i))            = 1; % Count total nr of collisions
                 end
             end
@@ -360,9 +342,11 @@ classdef Arena < handle
             pos_update                  = zeros(obj.nAgents,3);
             tmpVel                      = reshape(obj.a_velocities(max(obj.t-1,1),:,:),[obj.nAgents 3]);
             if obj.t > 1
-                noise = [obj.noise_u(:,(obj.t-1)*(indiRuns)) obj.noise_v(:,(obj.t-1)*(indiRuns))];
+                noise_x  = obj.noise_u(:,(obj.t-1)*(indiRuns));
+                noise_y  = obj.noise_v(:,(obj.t-1)*(indiRuns));
             else
-                noise = [0 0];
+                noise_x = 0;
+                noise_y = 0;
             end
             for i=1:indiRuns
                 pos_x_err   = sp(:,1) - pos_update(:,1);
@@ -377,12 +361,12 @@ classdef Arena < handle
                 sp_accel_n  = sqrt(sp_accel_x.^2+sp_accel_y.^2);
                 sp_accel_x  = sp_accel_x .* min(sp_accel_n, 6) ./ sp_accel_n;
                 sp_accel_y  = sp_accel_y .* min(sp_accel_n, 6) ./ sp_accel_n;
-                
-                prev_noise  = noise;
-
-                noise       = [obj.noise_u(:,(obj.t-1)*(indiRuns)+i) obj.noise_v(:,(obj.t-1)*(indiRuns)+i)];
-                tmpVel(:,1) = tmpVel(:,1) + (noise(:,1) - prev_noise(:,1)) + obj.dt .* 1./indiRuns .* sp_accel_x;
-                tmpVel(:,2) = tmpVel(:,2) + (noise(:,2) - prev_noise(:,2)) + obj.dt .* 1./indiRuns .* sp_accel_y;
+                prev_noise_x    = noise_x;
+                prev_noise_y    = noise_y;
+                noise_x         = obj.noise_u(:,(obj.t-1)*(indiRuns)+i);
+                noise_y         = obj.noise_v(:,(obj.t-1)*(indiRuns)+i);
+                tmpVel(:,1) = tmpVel(:,1) + (noise_x - prev_noise_x) + obj.dt .* 1./indiRuns .* sp_accel_x;
+                tmpVel(:,2) = tmpVel(:,2) + (noise_y - prev_noise_y) + obj.dt .* 1./indiRuns .* sp_accel_y;
                 %tmpVel(:,3)= tmpVel + sp_accel_z;
                 pos_update  = pos_update + obj.dt .* 1./indiRuns .* tmpVel;
             end

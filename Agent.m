@@ -10,37 +10,35 @@ classdef Agent < handle
         v_max               = 1;                    % Max v in m/s
         th_max              = 200/180*pi();         % Max theta in rad/s
         t_mem               = 20;                   % Memory [timesteps]
+        swarmMode           = 2;
+        c_pos               = [0 0 10];
+        field_type          = 'bucket';
+        swing_angle         = true;
         % Camera properties
         cam_dir             = [0 -30/180*pi()];     % Camera direction [radian yaw, radian pitch]
         cam_fov             = 152/180*pi();         % Camera FOV [radian]
         cam_range           = 4;                    % Camera range [m]
         cam_acc             = 0.95;                 % Accuracy of Camera
-        % Non-optional properties
-        neighbours          = {};                   % Structure to save neighbours
-        u_d_decom           = {};                   % Structure to save decomposed v_d into seperate signals
-        pos                 = [];                   % Matrix containing current position ([x y z])
-        heading             = [];                   % Matrix containing current heading ([yaw pitch])
-        vel                 = [];
-        genome              = [];
         % Cost
-        collisions          = 0;                    % Matrix containing collisions (t,id)
         vel_cost            = 0;
-        dist_cost           = 0;
-        % Placeholders
-        net                 = @(x) 0;               % Placeholder for simpleNN network
         % Arena variables
         dt                  = 0;
         t                   = 0;
         T                   = 0;
-        swarmMode           = 2;
+        % Placeholders
+        neighbours          = [];                   % Structure to save current neighbours
+        prev_neighbours     = [];                   % Structure to save previous neighbours
+        pos                 = [];                   % Matrix containing current position ([x y z])
+        heading             = [];                   % Matrix containing current heading ([yaw pitch])
+        vel                 = [];
+        genome              = [];
+        net                 = @(x) 0;               % Placeholder for simpleNN network
         swarmSize           = 1;
-        c_pos               = [0 0 10];
-        circle_packing_radius;
         prev_vd             = 0;
-        field_type          = 'bucket';
-        field_varargin;
         c_fun               = 0;
-        swing_angle         = true;
+        fieldFunction       = @(x) [0 0 0];
+        circle_packing_radius;
+        field_varargin;
     end
     
     methods
@@ -55,8 +53,7 @@ classdef Agent < handle
             obj.pos                     = pos;
             obj.vel                     = [0 0 0];
             obj.heading                 = head;
-            obj.collisions              = zeros(obj.T/obj.dt+1,1);
-            obj.neighbours              = cell(obj.T/obj.dt,1);
+            obj.neighbours              = zeros(0,6);
         end
         
         function [v_d,theta,phi] = Update(obj,t,pos,heading,vel,neighbours,agent_positions,agent_distances)
@@ -67,8 +64,9 @@ classdef Agent < handle
             end
             obj.vel                 = vel;
             obj.heading             = heading;
-            obj.neighbours{t}       = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances');                     % Using detected neighbours build the matrix
-            [v_d,g_d]               = obj.calculate_vd(obj.neighbours{t}(:,3:6));
+            obj.prev_neighbours     = obj.neighbours;
+            obj.neighbours          = obj.buildNeighbourMatrix(neighbours, agent_positions, agent_distances');                     % Using detected neighbours build the matrix
+            [v_d,g_d]               = obj.calculate_vd(obj.neighbours(:,3:6));
             v_dhat                  = v_d/sqrt(v_d(1)^2+v_d(2)^2);
             if obj.swarmMode == 1
                 phi                     = atan2(v_dhat(2),v_dhat(1));                           % Yaw angle of v_d
@@ -81,24 +79,17 @@ classdef Agent < handle
             end
             if obj.swing_angle
                 % Fake 180deg FOV
-                phi                     = phi + 0.5 * (pi() - obj.cam_fov) * sin(2 * pi() * 1/3 * obj.t * obj.dt);
+                phi                     = phi + 0.5 * (pi() - obj.cam_fov) * sin(2 * pi() * 1/3 * obj.t * obj.dt + obj.id);
             end
-            obj.vel_cost            = obj.vel_cost + (sqrt(v_d(1)^2 + v_d(2)^2) / sqrt(g_d(1)^2 + g_d(2)^2) - 1).^2;                             % Apply agent dynamics to desired velocity
         end
         
         function m_neighbours = buildNeighbourMatrix(obj,neighbours,agent_positions, agent_distances)
             nrNeighbours    = length(neighbours);
-            if obj.t > 1
-                prev_neighbours = obj.neighbours{obj.t-1};
-                if~isempty(prev_neighbours)
-                    m_neighbours    = prev_neighbours(prev_neighbours(:,2) > (obj.t-obj.t_mem),:);                           % Select neighbours from memory which haven't degraded
-                    m_neighbours    = m_neighbours(logical(-1 * sum(m_neighbours(:,1) == neighbours,2) + 1),:);
-                    newStart        = size(m_neighbours,1);
-                    m_neighbours    = [m_neighbours; zeros(nrNeighbours,6)];
-                else
-                    newStart        = 0;
-                    m_neighbours    = zeros(nrNeighbours,6);
-                end
+            if~isempty(obj.prev_neighbours)
+                m_neighbours    = obj.prev_neighbours(obj.prev_neighbours(:,2) > (obj.t-obj.t_mem),:);                           % Select neighbours from memory which haven't degraded
+                m_neighbours    = m_neighbours(logical(-1 * sum(m_neighbours(:,1) == neighbours,2) + 1),:);
+                newStart        = size(m_neighbours,1);
+                m_neighbours    = [m_neighbours; zeros(nrNeighbours,6)];
             else
                 newStart        = 0;
                 m_neighbours    = zeros(nrNeighbours,6);
@@ -112,26 +103,25 @@ classdef Agent < handle
         end
         
         function [v_d,g_i] = calculate_vd(obj, neighbours)
-            L_i = [0 0 0];        % Lattice formation
             g_i = obj.global_interaction(obj.pos');
             if ~isempty(neighbours)
                 q_ij    = obj.pos' - neighbours(:,1:3);       % Relative vector between agent i and j
                 nMag    = neighbours(:,4);
                 nDir    = q_ij ./ nMag;
                 nL_i    = obj.local_interaction(nMag')';
-                L_i     = sum(nL_i .* nDir,1)./length(nL_i);    % Average over nr. of agents
+                L_i     = sum(nL_i .* nDir,1)./length(nL_i);   % Average over nr. of agents
+                u_d     = L_i + obj.loglo_int(sqrt(L_i(1)^2+L_i(2)^2)) * g_i;
+            else
+                u_d     = obj.loglo_int(0) * g_i;
             end
-            %u_d     = L_i + (obj.v_max - obj.genome(2) * min(obj.v_max,sqrt(L_i(1)^2+L_i(2)^2)))/obj.v_max * g_i;                                    % Sum to find u_d
-            u_d     = L_i + obj.loglo_int(sqrt(L_i(1)^2+L_i(2)^2)) * g_i;
-            u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2);% + u_d(3)^2);
+            u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2); % + u_d(3)^2);
             if u_d_n > obj.v_max
-                g_i = g_i / u_d_n * obj.v_max;
-                L_i = L_i / u_d_n * obj.v_max;
-                u_d = g_i + L_i;
+                u_d = u_d / u_d_n * obj.v_max;
             end
-            d_i         = -obj.genome(1)*(L_i+g_i - obj.prev_vd);   % Calculate dissipative energy
-            v_d         = u_d + d_i;
-            obj.prev_vd = v_d;
+            d_i             = -obj.genome(1)*(u_d - obj.prev_vd);   % Calculate dissipative energy
+            v_d             = u_d + d_i;
+            obj.prev_vd     = v_d;
+            obj.vel_cost    = obj.vel_cost + (g_i(1) - v_d(1))^2 + (g_i(2) - v_d(2))^2;
         end
         
         function y = local_interaction(x)
@@ -141,44 +131,30 @@ classdef Agent < handle
         function y = loglo_int(obj, L_i_n)
             % Returns a 0-1 scalar of how much of g_i is taken into account
             % dependant on the size of L_i
-            y = min(obj.v_max,max(0, obj.v_max - obj.genome(2) * L_i_n)).^2./(obj.v_max^2);
+            y = (max(0,obj.v_max - obj.genome(2) * L_i_n)./obj.v_max).^2;
         end
         
         function X = getAgentFunction(obj,x)
-            X       = zeros(size(x));
-            for r=1:length(x)
-                X(r)    = obj.local_interaction(x(r));
-            end
+            X = obj.local_interaction(x);
         end
         
         function g = global_interaction(obj,x)
             x = x - obj.c_pos;
-            switch obj.field_type
-                case 'circle'
-                g       = obj.circleField(x, obj.field_varargin); 
-                case 'bucket'
-                g       = obj.bucketField(x, obj.field_varargin);
-                case 'point'
-                g       = obj.pointField(x, obj.field_varargin);
-                otherwise
-                    obj.field_type      = 'bucket';
-                    obj.field_varargin  = cell(obj.seperation_range + obj.collision_range,0.9*obj.v_max,0.1*obj.v_max);
-                    g                   = global_interaction(x, obj.field_varargin);
-            end
+            g = obj.fieldFunction(x, obj.field_varargin);
         end
         
         function g_i = pointField(~, pos, inputArgs)
             % pos, v_max
-            g_i             = inputArgs{1} * [-pos(1) -pos(2) 0]./sqrt(pos(1)^2+pos(2)^2);
+            R               = sqrt(pos(1)^2 + pos(2)^2);
+            g_i             = (R>0.5) * inputArgs{1} * [-pos(1) -pos(2) 0]./R;
         end
         
         function g_i = bucketField(obj, pos, inputArgs)
-            % pos, seperation_distance, v_max, v_min
+            % pos, v_max, v_min
             pos_n           = sqrt(pos(1)^2+pos(2)^2);
-            bucket_radius   = obj.circle_packing_radius(obj.swarmSize) * inputArgs{1};
-            g_in            = (1 - 1 / (1 + exp(6 / (1 * bucket_radius) * (pos_n - (1 * bucket_radius) )))) * inputArgs{2};
+            g_in            = (1 - 1 / (1 + exp(6 / (1.375 * obj.circle_packing_radius) * (pos_n - (1.375 * obj.circle_packing_radius) )))) * inputArgs{1};
             g_id            = [-pos(1) -pos(2) 0]./pos_n;
-            g_i             = max(inputArgs{3},min(inputArgs{2},g_in)) * g_id;
+            g_i             = max(inputArgs{2},min(inputArgs{1},g_in)) * g_id;
         end
         
         function g_i = circleField(~, pos, inputArgs)
