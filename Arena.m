@@ -86,7 +86,8 @@ classdef Arena < handle
                 for i = 1:obj.nAgents
                     a_n_mat                             = find(neighbours(i,:)>0);
                     distances                           = dAbs(i,a_n_mat);
-                    [v_d(i,:),theta(i),phi(i),g_d(i,:)] = obj.agents{i}.Update(obj.t,reshape(obj.a_positions(ti,i,:),[3 1]), reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances);
+                    pos                                 = reshape(obj.a_positions(ti,i,:),[3 1]);
+                    [v_d(i,:),theta(i),phi(i),g_d(i,:)] = obj.agents{i}.Update(obj.t,pos, reshape(obj.a_headings(ti,i,:),[2 1]), reshape(obj.a_velocities(ti,i,:),[3 1]), a_n_mat, reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]), distances);
                 end
                 v_real          = obj.indiGuidance(v_d);
                 % Alpha-lattice deformation: https://pdfs.semanticscholar.org/ccfb/dd5c796bb485effe8a035686d785e8306ff4.pdf
@@ -106,7 +107,7 @@ classdef Arena < handle
                     end
                     obj.distance_cost(obj.t)    = tmp_cost;
                     obj.seperation_cost(obj.t)  = tmp_sep_cost;
-                    obj.velocity_cost(obj.t)    = sum((g_d(:,1) - v_real(:,1)).^2 + (g_d(:,2) - v_real(:,2)).^2);
+                    obj.velocity_cost(obj.t)    = sum((g_d(:,1) - reshape(obj.a_positions(ti,:,1),[obj.nAgents 1])).^2 + (g_d(:,2) - reshape(obj.a_positions(ti,:,2),[obj.nAgents 1])).^2);
                 end
                 obj.a_positions(ti+1,:,:)   = reshape(obj.a_positions(ti,:,:),[obj.nAgents 3]) + v_real;% + [obj.noise_u(:,obj.t) obj.noise_v(:,obj.t) zeros(obj.nAgents,1)];
                 obj.a_headings(ti+1,:,:)    = [phi theta];
@@ -362,8 +363,10 @@ classdef Arena < handle
                 sp_accel_y  = (speed_sp_y - tmpVel(:,2)) .* guidance_indi_speed_gain;
                 %sp_accel_z = (speed_sp_z - tmpVel(:,3)) ,* guidance_indi_speed_gain;                
                 sp_accel_n  = sqrt(sp_accel_x.^2+sp_accel_y.^2);
-                sp_accel_x  = sp_accel_x .* min(sp_accel_n, 6) ./ sp_accel_n;
-                sp_accel_y  = sp_accel_y .* min(sp_accel_n, 6) ./ sp_accel_n;
+                if sp_accel_n > 6
+                    sp_accel_x  = sp_accel_x .* 6 ./ sp_accel_n;
+                    sp_accel_y  = sp_accel_y .* 6 ./ sp_accel_n;
+                end
                 prev_noise_x    = noise_x;
                 prev_noise_y    = noise_y;
                 noise_x         = obj.noise_u(:,(obj.t-1)*(indiRuns)+i);
