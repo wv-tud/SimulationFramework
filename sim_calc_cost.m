@@ -57,7 +57,7 @@ for s=1:simPar.trialSize
     % Calculate cost
     dcX             = 0:1/(simPar.simTime * simPar.fps):1;
     dcX(1)          = [];
-    dcW             = sqrt(1-(dcX-1).^2);
+    dcW             = sqrt(1-(dcX-1).^4);
     dcW             = dcW' / sum(dcW);
     distanceCost    = distanceCost  + sum(dcW .* uArena.distance_cost);
     collisionCost   = collisionCost + (1 - uArena.t/(2 * simPar.simTime * simPar.fps)) * sum(sum(uArena.collisions));
