@@ -1,4 +1,4 @@
-function state = gaPlotResults(simPar, options,state,flag, optimType)
+function state = plotResults(simPar, options,state,flag, optimType)
 %GAPLOTBESTINDIV Plots the best individual.
 %   STATE = GAPLOTBESTINDIV(OPTIONS,STATE,FLAG) plots the best 
 %   individual's genome as a histogram, with the number of bins
@@ -25,6 +25,10 @@ switch optimType
         curBestScore    = min(curScore);
     case 'fmincon'
         genome          = state;
+        curBestScore    = options.fval;
+        curGen          = options.iteration;
+    case 'patternsearch'
+        genome          = options.x;
         curBestScore    = options.fval;
         curGen          = options.iteration;
 end
@@ -130,12 +134,12 @@ switch flag
     case 'done'
         hold off
         %% Plot best score
-        if strcmp(optimType,'ga')
-            LegnD = legend('Best fitness','Mean fitness');
-            set(LegnD,'FontSize',8);
-        end
+%         if strcmp(optimType,'ga')
+%             LegnD = legend('Best fitness','Mean fitness');
+%             set(LegnD,'FontSize',8);
+%         end
 end
-if strcmp(optimType,'fmincon')
+if strcmp(optimType,'fmincon') || strcmp(optimType,'patternsearch')
     state = false;
 end
 end
