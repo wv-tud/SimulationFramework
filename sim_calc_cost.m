@@ -6,6 +6,8 @@ distanceCost    = 0;
 collisionCost   = 0;
 seperationCost  = 0;
 velocityCost    = 0;
+simPar.camera_range     = (simPar.seperation_range + simPar.collision_range) * genome(1);
+genome(1)               = [];
 for s=1:simPar.trialSize
     % Simulation options
     if ~isfield(simPar,'mission')
@@ -33,9 +35,9 @@ for s=1:simPar.trialSize
     uArena.sinusoidAgents       = simPar.sinusoidAgents;
     uArena.field                = simPar.field;
     % Simulation dependant options
-    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
+    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>2
         simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
-        fprintf('WARNING: lattice ratio >= 2, limiting camera range to %9.2f\n', simPar.camera_range);
+        fprintf('WARNING: lattice ratio > 2, limiting camera range to %9.2f\n', simPar.camera_range);
     end
     switch(simPar.type)
         case 'simpleNN'
@@ -70,7 +72,7 @@ for s=1:simPar.trialSize
 end
 % Normalize cost wrt simulation parameters
 velocityCost    = simPar.velocity_cost      * velocityCost      / (simPar.nAgents * simPar.trialSize);
-distanceCost    = simPar.distance_cost      * distanceCost      / (simPar.trialSize * simPar.nAgents);
+distanceCost    = simPar.distance_cost      * distanceCost      / (simPar.nAgents * simPar.trialSize);
 collisionCost   = simPar.collision_cost     * collisionCost     / (simPar.simTime * simPar.fps * simPar.nAgents * simPar.trialSize);
 seperationCost  = simPar.seperation_cost    * seperationCost    / (simPar.nAgents * simPar.trialSize);
 varargout{1}    = seperationCost + collisionCost + distanceCost + velocityCost;

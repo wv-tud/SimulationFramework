@@ -19,20 +19,26 @@ switch optimType
         end
         [~,i] = min(state.Score);
         genome = state.Population(i,:);
+        lattice_ratio   = genome(1);
+        genome(1)       = [];
         curScore        = state.Score;
         curGen          = state.Generation;
         curMeanScore    = meanf(curScore);
         curBestScore    = min(curScore);
     case 'fmincon'
         genome          = state;
+        lattice_ratio   = genome(1);
+        genome(1)       = [];
         curBestScore    = options.fval;
         curGen          = options.iteration;
     case 'patternsearch'
         genome          = options.x;
+        lattice_ratio   = genome(1);
+        genome(1)       = [];
         curBestScore    = options.fval;
         curGen          = options.iteration;
 end
-
+simPar.camera_range     = (simPar.seperation_range + simPar.collision_range) * lattice_ratio;
 switch(agentType)
     case 'pinciroli'
         tmp_agent = Agent_pinciroli(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
@@ -60,18 +66,20 @@ switch flag
         %% Plot field
         subplot(2,2,1);
         hold on;
+        axis tight;
         simPar.type             = 'pinciroli';
-        simPar.simTime          = 1/simPar.fps;
+        simPar.simTime          = 2/simPar.fps;
         [simPar.nnAgents,simPar.polyAgents,simPar.sinusoidAgents] = deal(0);
-        [~,sArena]              = sim_calc_cost(simPar,[0.12 0 0.12], false);
+        [~,sArena]              = sim_calc_cost(simPar,[1.6 0.12 0 0.12], false);
         agentIndices            = sArena.chunkSplit(1:sArena.nAgents,length(simPar.field));
         margin                  = 1.5;
-        reso                    = size(1) / 10;
+        reso                    = margin * simPar.size(1) / 100;
         l = 1;
         sArena.agents{agentIndices(l,1)}.plotGlobalAttraction(-margin*simPar.size(1)/2:reso:margin*simPar.size(1)/2,-margin*simPar.size(2)/2:reso:margin*simPar.size(2)/2, [0 0 10],false);
         %% Plot best score
         H = subplot(2,2,2);
         hold on;
+        axis tight;
         xlabel('Generation','interp','none');
         ylabel('Fitness value','interp','none');
         plotBest = plot(curGen,curBestScore,'.k');
@@ -88,19 +96,24 @@ switch flag
         %% Plot agent function
         subplot(2,2,[3 4]);
         hold on;
-        plot([x(1) x(end)],[simPar.v_max simPar.v_max],'--','Color','black');
-        plot([x(1) x(end)],[-simPar.v_max -simPar.v_max],'--','Color','black');
+        axis tight;
         sigma = tmp_agent.seperation_range+tmp_agent.collision_range;
+        plot([x(1) 2*sigma],[simPar.v_max simPar.v_max],'--','Color','black');
+        plot([x(1) 2*sigma],[-simPar.v_max -simPar.v_max],'--','Color','black');
         plot([sigma sigma],[-simPar.v_max simPar.v_max],'--','Color','black');
-        plot([x(1) x(end)],[0 0],'-','Color','black');
+        plot([x(1) 2*sigma],[0 0],'-','Color','black');
         y = tmp_agent.getAgentFunction(x);
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
         h2 = plot(x,tmp_agent.loglo_int(abs(y)).*simPar.v_max,'--','Color','red');
         set(h2,'Tag','gaPlotAgentFunctionLoGlo');
+        h3 = text(0.3,0.1*simPar.v_max,strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
+        set(h3,'Tag','gaPlotlattice_ratio');
+        h4 = text(0.3,0.2*simPar.v_max,strcat(['Viscosity: ' num2str(genome(1)*100) '%']));
+        set(h4,'Tag','gaPlotviscosity');
         grid minor;
         set(gca,'xlim',[0, tmp_agent.cam_range])
-        set(gca,'ylim',[-1.5 * simPar.v_max, 1.5 * simPar.v_max])
+        set(gca,'ylim',[min(0,max(1.1*min(y),-1.1 * simPar.v_max)), 1.1 * simPar.v_max])
         title('Current Best Individual','interp','none')
         xlabel('Distance [m]','interp','none');
         ylabel('Velocity response [m/s]','interp','none');
@@ -122,15 +135,23 @@ switch flag
             set(get(gca,'Title'),'String',sprintf('Best: %g',curBestScore));
         end
         set(gca,'xlim',[0,max(1,curGen)]);
-        set(gca,'ylim',[max(0,min(curBestScore-0.1,curBestScore-std(bestCol))),max(curBestScore+0.1,curBestScore+std(bestCol))]);
+        set(gca,'ylim',[max(0,min(curBestScore-0.1,curBestScore-std(bestCol(max(1,end-20):end)))),max(curBestScore+0.1,curBestScore+std(bestCol(max(1,end-20):end)))]);
         %% Plot agent function
         subplot(2,2,[3 4]);
-        hold on;
         y = tmp_agent.getAgentFunction(x);
+        set(gca,'XLim',[0 simPar.camera_range]);
+        set(gca,'ylim',[min(0,max(1.1*min(y),-1.1 * simPar.v_max)), 1.1 * simPar.v_max])
+        hold on;
         h = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunction');
         set(h,'Ydata',y);
+        set(h,'Xdata',x);
         h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo');
         set(h2,'Ydata',tmp_agent.loglo_int(abs(y)).*simPar.v_max);
+        set(h2,'Xdata',x);
+        h3 = findobj(get(gca,'Children'),'Tag','gaPlotlattice_ratio');
+        set(h3,'String',strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
+        h4 = findobj(get(gca,'Children'),'Tag','gaPlotviscosity');
+        set(h4,'String',strcat(['Viscosity: ' num2str(genome(1)*100) '%']));
     case 'done'
         hold off
         %% Plot best score

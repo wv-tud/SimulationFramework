@@ -160,9 +160,13 @@ classdef Agent < handle
         function g_i = bucketField(obj, pos, inputArgs)
             % pos, v_max, v_min
             pos_n           = max(0.01, sqrt(pos(1)^2+pos(2)^2));
-            g_in            = (1 - 1 / (1 + exp(6 / (1.375 * obj.circle_packing_radius) * (pos_n - (1.375 * obj.circle_packing_radius) )))) * inputArgs{1};
-            g_id            = [-pos(1) -pos(2) 0]./pos_n;
-            g_i             = max(inputArgs{2},min(inputArgs{1},g_in)) * g_id;
+            if pos_n > 0
+                g_in            = (1 - 1 / (1 + exp(6 / (1.375 * obj.circle_packing_radius) * (pos_n - (1.375 * obj.circle_packing_radius) )))) * inputArgs{1};
+                g_id            = [-pos(1) -pos(2) 0]./pos_n;
+                g_i             = max(inputArgs{2},min(inputArgs{1},g_in)) * g_id;
+            else
+                g_i             = [0 0 0];
+            end
         end
         
         function g_i = circleField(~, pos, inputArgs)
@@ -182,11 +186,13 @@ classdef Agent < handle
             g_i             = g_i';
         end
         
-        function F = plotGlobalAttraction(obj,x_arr,y_arr,varargin)
+        function varargout = plotGlobalAttraction(obj,x_arr,y_arr,varargin)
             resfac      = 20;
             [x,y]       = meshgrid(x_arr,y_arr);
             x           = reshape(x,[],1);
             y           = reshape(y,[],1);
+            figure_bool = false;
+            noplot      = false;
             if ~isempty(varargin)
                 for i=1:length(varargin)
                     if isa(varargin{i},'function_handle')
@@ -196,14 +202,23 @@ classdef Agent < handle
                             obj.c_pos  = varargin{i};
                         end
                     elseif isa(varargin{i},'logical')
-                        if varargin{i}
-                            F       = figure();
+                        if ~figure_bool
+                            if varargin{i}
+                                F       = figure();
+                                figure_bool = true;
+                            else
+                                F       = false;
+                                figure_bool = true;
+                            end
                         else
-                            F       = false;
+                            if varargin{i}
+                                noplot = true;
+                            else
+                                noplot = false;
+                            end
                         end
                     end
-                end
-                    
+                end  
             end
             Rij         = [x y zeros(size(x))];
             g_i         = zeros(length(Rij),3);
@@ -214,20 +229,34 @@ classdef Agent < handle
             u       = reshape(g_i(:,1),length(y_arr),length(x_arr))./vNorm;
             v       = reshape(g_i(:,2),length(y_arr),length(x_arr))./vNorm;
             w       = reshape(g_i(:,3),length(y_arr),length(x_arr))./vNorm;
-            if ~exist('F','var')
-                F = figure();
+            if ~noplot
+                if ~exist('F','var')
+                    F = figure();
+                end
+                hold on;
+                surf(x_arr,y_arr, vNorm,'EdgeColor','none','LineStyle','none');
+                quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
+                hold off;
+                axis equal tight;
+                h       = colorbar();
+                title('Global attractor - g_i(r_{ij})');
+                xlabel('x position [m]');
+                ylabel('y position [m]');
+                zlabel('Velocity [m/s]');
+                ylabel(h,'Velocity [m/s]');
             end
-            hold on;
-            surf(x_arr,y_arr, vNorm,'EdgeColor','none','LineStyle','none');
-            quiver3(x_arr(1:resfac:end),y_arr(1:resfac:end), vNorm(1:resfac:end,1:resfac:end),u(1:resfac:end,1:resfac:end),v(1:resfac:end,1:resfac:end),w(1:resfac:end,1:resfac:end),0,'Color','k');
-            hold off;
-            axis equal tight;
-            h       = colorbar();
-            title('Global attractor - g_i(r_{ij})');
-            xlabel('x position [m]');
-            ylabel('y position [m]');
-            zlabel('Velocity [m/s]');
-            ylabel(h,'Velocity [m/s]');
+            if nargout == 1
+                varargout{1} = F;
+            elseif nargout >= 3
+                varargout{1} = x_arr;
+                varargout{2} = y_arr;
+                varargout{3} = vNorm;
+                if nargout == 6
+                    varargout{4} = u;
+                    varargout{5} = v;
+                    varargout{6} = w;
+                end
+            end
         end
     end
 end

@@ -18,6 +18,8 @@ classdef visualArena < handle
         moviefile;                          % Name of movie file
         arenaVars;                          % Structure containing relevant arena variables
         % Handles
+        agentColours;
+        fh_background;
         fig_table   = {};                   % Figure table handle
         movie;                              % VideoWriter object
         fig;                                % Figure handle
@@ -53,6 +55,15 @@ classdef visualArena < handle
             obj.arenaVars.T                 = arena.T;
             obj.arenaVars.field             = arena.field;
             obj.arenaVars.boc               = arena.boc;
+            fieldAgents = arena.chunkSplit(1:obj.arenaVars.nAgents,length(obj.arenaVars.field));
+            obj.agentColours                    = cell(obj.arenaVars.nAgents,1);
+            Colours                         = {[1 0 1] [0 1 1] [1 1 0] [1 0 0] [0 1 0] [0 0 1]};
+            for i=1:obj.arenaVars.nAgents 
+                obj.agentColours{i}     = Colours{sum(fieldAgents == i,2)>0};
+            end
+            for i=1:length(obj.arenaVars.field)
+                obj.arenaVars.sampleAgent{i}       = arena.agents{fieldAgents(i,1)};
+            end
             if arena.moving_axes
                 obj.p_mov_axe = 1;
             else
@@ -98,9 +109,11 @@ classdef visualArena < handle
             obj.fig             = figure('Position',[0 0 obj.resolution(1) obj.resolution(2)]);
             obj.fig_table{1}    = figureTable(0,240,obj.resolution,{'v_{gust}','\eta_{camera}','r_{camera}','FOV','\Theta_{max}','v_{max}','r_{seperation}','\Deltat','T_{sim}','N_{agents}'},{strcat([num2str(obj.arenaVars.gustVelocity) 'm/s']),strcat([num2str(100*obj.arenaVars.cam_acc) '%']),obj.arenaVars.cam_range,rad2deg(obj.arenaVars.cam_fov),rad2deg(obj.arenaVars.th_max),obj.arenaVars.v_max,obj.arenaVars.seperation_range,obj.arenaVars.dt,obj.arenaVars.T,obj.arenaVars.nAgents});
             obj.fig_table{2}    = figureTable(0,150,obj.resolution,{'collisions' 't'},{'0' '0.0'});
-            obj.axes            = axes('position',[0.03 0.05 (0.94*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
-            axis equal;
+            obj.axes            = axes('position',[0.05 0.05 (0.90*(obj.resolution(1)-225))/obj.resolution(1) 0.90]);
+            axis equal
             grid minor;
+            set(obj.axes,'MinorGridColor',[0.7 0.7 0.7]);
+            set(obj.axes,'MinorGridLineStyle','-');
             set(obj.fig,'PaperPositionMode','manual');
             set(obj.fig,'PaperPosition',[100 100 obj.resolution(1) obj.resolution(2)]);
             set(obj.fig,'Renderer','opengl','DockControls','off','MenuBar','none','ToolBar','none','Resize','off','InvertHardcopy','off');
@@ -153,13 +166,42 @@ classdef visualArena < handle
         
         function printAgents(obj,t,pos,head,collision_count)
             set(obj.fig, 'currentaxes', obj.axes);                  % Select axes
+            mc_pos  = zeros(4,1);
+            c_pos   = cell(length(obj.arenaVars.field),1);
+            for i=1:length(obj.arenaVars.field)
+                if isfield(obj.arenaVars.field,'c_fun')
+                    c_pos{i}           = feval(obj.arenaVars.field(i).c_fun, t * obj.arenaVars.dt);
+                else
+                    c_pos{i}           = obj.arenaVars.field(i).c_pos;
+                end
+                if i==1
+                    mc_pos(1) = c_pos{i}(1);
+                    mc_pos(2) = c_pos{i}(1);
+                    mc_pos(3) = c_pos{i}(2);
+                    mc_pos(4) = c_pos{i}(2);
+                else
+                    mc_pos(1) = min(mc_pos(1),c_pos{i}(1));
+                    mc_pos(2) = max(mc_pos(2),c_pos{i}(1));
+                    mc_pos(3) = min(mc_pos(3),c_pos{i}(2));
+                    mc_pos(4) = max(mc_pos(4),c_pos{i}(2));
+                end
+            end
+            axis_size = [min([pos(:,1); mc_pos(1)])-obj.arenaVars.cam_range max([pos(:,1); mc_pos(2)])+obj.arenaVars.cam_range min([pos(:,2); mc_pos(3)])-obj.arenaVars.cam_range max([pos(:,2); mc_pos(4)])+obj.arenaVars.cam_range];
             if t == 1
                 cla(obj.axes);                                       % Empty axes
                 % Plot shapes
                 hold on;
+                obj.fh_cpos = {};
+                for i=1:length(obj.arenaVars.field)
+                    obj.fh_cpos{i}          = plot(c_pos{i}(1),c_pos{i}(2),'x','Color',obj.agentColours{obj.arenaVars.sampleAgent{i}.id});
+                    [x_arr,y_arr,z_arr]     = obj.arenaVars.sampleAgent{i}.plotGlobalAttraction(axis_size(1):0.5:axis_size(2),axis_size(3):0.5:axis_size(4),c_pos{i},false,true);
+                    k=0.05:0.5:obj.arenaVars.v_max; 
+                    [~,obj.fh_background{i}]   = contour(x_arr,y_arr,z_arr,[k k],'LineStyle',':');
+                end
+                colorbar('Position',[0.77 0.67 0.01 0.27]);
                 obj.fh_drone = viscircles(pos(:,1:2), 0.5*obj.arenaVars.collision_range*ones(obj.arenaVars.nAgents,1), 'Color', 'black', 'LineStyle', '-', 'LineWidth',1);
                 if obj.p_circ==1
-                    obj.fh_circles = viscircles(pos(:,1:2), ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range, 'Color', 'black', 'LineStyle', '--', 'LineWidth',1);
+                    obj.fh_circles = viscircles(pos(:,1:2), ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range, 'Color', [0.85 0.85 0.85], 'LineStyle', '--', 'LineWidth',1);
                 end
                 if obj.p_head==1
                     [cx,cy,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1),zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);
@@ -171,8 +213,8 @@ classdef visualArena < handle
                 if obj.p_fov==1
                     [lx,ly,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);
                     [rx,ry,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)+0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*obj.arenaVars.cam_range);
-                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','m--');
-                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','m--');
+                    obj.fh_fovL = plot([pos(:,1) (pos(:,1)+lx)]',[pos(:,2) (pos(:,2)+ly)]','--','Color',[0.85 0.85 0.85]);
+                    obj.fh_fovR = plot([pos(:,1) (pos(:,1)+rx)]',[pos(:,2) (pos(:,2)+ry)]','--','Color',[0.85 0.85 0.85]);
                 elseif obj.p_fov==2
                     [lx,ly,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)-0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range);
                     [rx,ry,~] = sph2cart(head(:,1)+obj.arenaVars.cam_dir(1)+0.5*obj.arenaVars.cam_fov,zeros(obj.arenaVars.nAgents,1),ones(obj.arenaVars.nAgents,1)*0.5*obj.arenaVars.collision_range);
@@ -183,17 +225,18 @@ classdef visualArena < handle
                     labels = cellstr(int2str((1:obj.arenaVars.nAgents)'));
                     obj.fh_label = text(pos(:,1)+0.5*obj.arenaVars.collision_range,pos(:,2)+0.5*obj.arenaVars.collision_range,labels,'Color','k','FontSize',7);
                 end
-                obj.fh_cpos = {};
-                for i=1:length(obj.arenaVars.field)
-                    if isfield(obj.arenaVars.field,'c_fun')
-                        c_pos           = feval(obj.arenaVars.field(i).c_fun, obj.arenaVars.dt);
-                        obj.fh_cpos{i}  = plot(c_pos(1),c_pos(2),'x');
-                    else
-                        obj.fh_cpos{i}  = plot(obj.arenaVars.field(i).c_pos(1),obj.arenaVars.field(i).c_pos(2),'x');
-                    end
-                end
                 hold off;
             else
+                for i=1:length(obj.arenaVars.field)
+                    if isfield(obj.arenaVars.field,'c_fun')
+                        obj.fh_cpos{i}.XData    = c_pos{i}(1);
+                        obj.fh_cpos{i}.YData    = c_pos{i}(2);
+                        [x_arr,y_arr,z_arr]     = obj.arenaVars.sampleAgent{i}.plotGlobalAttraction(axis_size(1):0.5:axis_size(2),axis_size(3):0.5:axis_size(4),c_pos{i},false,true);
+                        set(obj.fh_background{i},'XData',x_arr);
+                        set(obj.fh_background{i},'YData',y_arr);
+                        set(obj.fh_background{i},'ZData',z_arr);
+                    end
+                end
                 % Update shapes
                 ppA_d = length(obj.fh_drone.Children(1).XData)/obj.arenaVars.nAgents;
                 if obj.p_circ == 1
@@ -243,40 +286,38 @@ classdef visualArena < handle
                         obj.fh_fovR(i).XData = [pos(i,1) (pos(i,1)+rx)];
                         obj.fh_fovR(i).YData = [pos(i,2) (pos(i,2)+ry)];
                     end
-                    if isa(obj.arenaVars.agents{i},'neuralnetAgent')
+                    for ag = 1:obj.arenaVars.nAgents
                         if obj.p_head>0
-                            obj.fh_head(i).Color = 'blue';
+                            obj.fh_head(ag).Color = obj.agentColours{ag};
                         end
                         if obj.p_fov>0
-                            obj.fh_fovL(i).Color = 'cyan';
-                            obj.fh_fovR(i).Color = 'cyan';
+                            obj.fh_fovL(ag).Color = obj.agentColours{ag};
+                            obj.fh_fovR(ag).Color = obj.agentColours{ag};
                         end
                     end
                     if obj.p_label==1
                         obj.fh_label(i).Position(1:2) = [pos(i,1) pos(i,2)]+0.5*obj.arenaVars.collision_range;
                     end
                 end
-                for i=1:length(obj.arenaVars.field)
-                    if isfield(obj.arenaVars.field,'c_fun')
-                        c_pos                   = feval(obj.arenaVars.field(i).c_fun, t * obj.arenaVars.dt);
-                        obj.fh_cpos{i}.XData    = c_pos(1);
-                        obj.fh_cpos{i}.YData    = c_pos(2);
-                    end
-                end
             end
             % Set axes
             if obj.p_mov_axe == 1
                 axis equal tight;
+                axis(obj.axes,axis_size);
+                set(obj.axes,'XTick',ceil(axis_size(1)/2)*2:2:floor(axis_size(2)/2)*2);
+                set(obj.axes,'YTick',ceil(axis_size(3)/2)*2:2:floor(axis_size(4)/2)*2);
+                obj.axes.XAxis.MinorTickValues = ceil(axis_size(1)*2)/2:0.5:floor(axis_size(2)*2)/2;
+                obj.axes.YAxis.MinorTickValues = ceil(axis_size(3)*2)/2:0.5:floor(axis_size(4)*2)/2;
             end
             if length(obj.p_axe_lim) == 2
                 limX = xlim;
                 limY = ylim;
-                axis([  min(limX(1),-0.5*obj.p_axe_lim(1)) max(limX(2),0.5*obj.p_axe_lim(1))...
+                axis(obj.axes,[  min(limX(1),-0.5*obj.p_axe_lim(1)) max(limX(2),0.5*obj.p_axe_lim(1))...
                     min(limY(1),-0.5*obj.p_axe_lim(2)) max(limY(2),0.5*obj.p_axe_lim(2))]);
             elseif length(obj.p_axe_lim) == 4
                 limX = xlim;
                 limY = ylim;
-                axis([  min(limX(1),obj.p_axe_lim(1)) max(limX(2),obj.p_axe_lim(2))...
+                axis(obj.axes,[  min(limX(1),obj.p_axe_lim(1)) max(limX(2),obj.p_axe_lim(2))...
                     min(limY(1),obj.p_axe_lim(3)) max(limY(2),obj.p_axe_lim(4))]);
             end
             % Update figure table

@@ -76,6 +76,7 @@ classdef Arena < handle
                         if obj.print==1
                             fprintf('Collision occured, stopping simulation.\n');
                         end
+                        obj.T = obj.t * obj.dt;
                         return;
                     end
                 end
@@ -100,7 +101,8 @@ classdef Arena < handle
                         dCostMat        = dAbs(i,dCostIndices(i,:));
                         dCostnAgents    = length(dCostMat);
                         if dCostnAgents == 0
-                            tmp_sep_cost    = tmp_sep_cost + 1;
+                            dAbs_sort       = sort(dAbs(i,:));
+                            tmp_sep_cost    = tmp_sep_cost + (dAbs_sort(2) - obj.agents{1}.cam_range)^2;
                         else
                             tmp_cost        = tmp_cost + 1/(dCostnAgents+1) * sum((dCostMat-sigma).^2);
                         end
@@ -192,7 +194,7 @@ classdef Arena < handle
             obj.a_headings(1,:,:)   = [head zeros(newAgents,1)];
             if strcmp(obj.init,'random') % Find collisions and resolve them before continuing
                 collisionFree = 0;
-                k = 1;
+                k = 1.5;
                 u = 1;
                 tries = 0;
                 while collisionFree == 0
@@ -203,11 +205,11 @@ classdef Arena < handle
                         continue;
                     end
                     tries = tries + 1;
-                    if mod(tries,2) == 0
-                        if k > 0.8
+                    if mod(tries,5) == 0
+                        if k > 1.0
                             k = 0.99 * k;   % First decrease the required seperation to 80%
                         else
-                            u = 1.01 * u;   % If that didn't work then let's try to increase the size
+                            u = 1.05 * u;   % If that didn't work then let's try to increase the size
                         end
                     end
                     id = unique(i);
