@@ -118,10 +118,10 @@ classdef Agent < handle
                 nDir    = q_ij ./ max(0.01, nMag);
                 nL_i    = obj.local_interaction(nMag')';
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);   % Average over nr. of agents
-                u_d     = L_i + obj.loglo_int(sqrt(L_i(1)^2+L_i(2)^2)) * g_i;
+                u_d     = L_i + obj.loglo_int(nDir,nMag) * g_i;
             else
                 L_i     = [0 0 0];
-                u_d     = obj.loglo_int(0) * g_i;
+                u_d     = obj.loglo_int([],[]) * g_i;
             end
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2); % + u_d(3)^2);
             if u_d_n > obj.v_max
@@ -136,10 +136,52 @@ classdef Agent < handle
             y       = x;
         end
         
-        function y = loglo_int(obj, L_i_n)
+        function y = loglo_int(obj, nDir, nL)
             % Returns a 0-1 scalar of how much of g_i is taken into account
             % dependant on the size of L_i
-            y = (max(0,obj.v_max - obj.genome(2) * L_i_n)./obj.v_max).^2;
+            % y = (max(0,obj.v_max - obj.genome(2) * L_i_n)./obj.v_max).^2;
+            nrNeighbours = length(nL);
+            if nrNeighbours > 1
+                n_angles                = obj.smallAngle(atan2(-nDir(:,2),-nDir(:,1))) + 0.5 * pi() - obj.heading(1);
+                n_angles(n_angles<0)    = n_angles(n_angles<0) + 2 * pi();
+                nInd                    = n_angles < pi();
+                n_angles                = n_angles(nInd);
+                nL                      = nL(nInd);
+                nrNeighbours            = length(n_angles);
+            end
+            switch nrNeighbours
+                case 0
+                    y = 1;
+                case 1
+                    totA    = 1/2 * pi() * obj.cam_range^2;
+                    theta   = acos((obj.cam_range - (obj.cam_range-nL/2))/obj.cam_range);
+                    dA      = obj.cam_range^2/2*(theta - sin(theta));
+                    y       = (totA - dA)/totA;
+                otherwise
+                    
+                    [n_sAngles,sI]  = sort(n_angles);
+                    n_sDist         = nL(sI);
+                    tri_angles      = diff(n_sAngles);
+                    tri_angles      = [n_sAngles(1) tri_angles' pi()-n_sAngles(end)];
+                    dA              = 0;
+                    if tri_angles(1) > 1/2 * pi()
+                        tri_angles(1)   = tri_angles(1) - 1/2 * pi();
+                        dA              = dA + 1/2 * 1/2 * pi() * obj.cam_range^2;
+                    end
+                    dA  = dA + 1/2 * (n_sDist(1)/2)^2 * tan(tri_angles(1));
+                    for i=2:length(n_angles)
+                        dA = dA + 1/2 * (n_sDist(i-1)/2)^2 * tan(tri_angles(i)/2);
+                        dA = dA + 1/2 * (n_sDist(i)/2)^2 * tan(tri_angles(i)/2);
+                    end
+                    if tri_angles(end) > 1/2 * pi()
+                        tri_angles(end) = tri_angles(end) - 1/2 * pi();
+                        dA              = dA + 1/2 * 1/2 * pi() * obj.cam_range^2;
+                    end
+                    dA      = dA + 1/2 * (n_sDist(end)/2)^2 * tan(tri_angles(end));
+                    totA    = 1/2 * pi() * obj.cam_range^2;
+                    y       = dA / totA;
+            end
+            y = y^obj.genome(2);
         end
         
         function X = getAgentFunction(obj,x)
@@ -257,6 +299,14 @@ classdef Agent < handle
                     varargout{6} = w;
                 end
             end
+        end
+        
+        function small_angles = smallAngle(~,angles)
+            small_angles        = angles  + floor(abs(angles./(2*pi()))).*(-2.*sign(angles))*pi();
+            ipPi                = find(small_angles>pi());
+            imPi                = find(small_angles<-pi());
+            small_angles(ipPi)  = -2*pi() + small_angles(ipPi);
+            small_angles(imPi)  = 2*pi() + small_angles(imPi);
         end
     end
 end
