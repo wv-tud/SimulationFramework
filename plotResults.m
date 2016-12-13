@@ -107,11 +107,19 @@ switch flag
         set(h,'Tag','gaPlotAgentFunction');
         tmp_agent.heading = [0 0];
         loglo = zeros(length(x),1);
+        loglo2 = zeros(length(x),1);
+        loglo3 = zeros(length(x),1);
         for pl=1:length(x)
-            loglo(pl) = tmp_agent.loglo_int([0 1],x(pl));
+            loglo(pl) = tmp_agent.loglo_int(-[0 1],x(pl));
+            loglo2(pl) = tmp_agent.loglo_int(-[cos(1/3*pi()) sin(1/3*pi()); cos(2/3*pi()) sin(2/3*pi())],[x(pl); x(pl)]);
+            loglo3(pl) = tmp_agent.loglo_int(-[cos(1/4*pi()) sin(1/4*pi()); cos(2/4*pi()) sin(2/4*pi()); cos(3/4*pi()) sin(3/4*pi())],[x(pl); x(pl); x(pl)]);
         end
         h2 = plot(x,loglo.*simPar.v_max,'--','Color','red');
         set(h2,'Tag','gaPlotAgentFunctionLoGlo');
+        h2 = plot(x,loglo2.*simPar.v_max,'-.','Color','red');
+        set(h2,'Tag','gaPlotAgentFunctionLoGlo2');
+        h2 = plot(x,loglo3.*simPar.v_max,':','Color','red');
+        set(h2,'Tag','gaPlotAgentFunctionLoGlo3');
         h3 = text(0.3,0.1*simPar.v_max,strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
         set(h3,'Tag','gaPlotlattice_ratio');
         h4 = text(0.3,0.2*simPar.v_max,strcat(['Viscosity: ' num2str(genome(1)*100) '%']));
@@ -153,10 +161,20 @@ switch flag
         h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo');
         tmp_agent.heading = [0 0];
         loglo = zeros(length(x),1);
+        loglo2 = zeros(length(x),1);
+        loglo3 = zeros(length(x),1);
         for pl=1:length(x)
-            loglo(pl) = tmp_agent.loglo_int([0 1],x(pl));
+            loglo(pl) = tmp_agent.loglo_int(-[0 1],x(pl));
+            loglo2(pl) = tmp_agent.loglo_int(-[cos(1/3*pi()) sin(1/3*pi()); cos(2/3*pi()) sin(2/3*pi())],[x(pl); x(pl)]);
+            loglo3(pl) = tmp_agent.loglo_int(-[cos(1/4*pi()) sin(1/4*pi()); cos(2/4*pi()) sin(2/4*pi()); cos(3/4*pi()) sin(3/4*pi())],[x(pl); x(pl); x(pl)]);
         end
         set(h2,'Ydata',loglo.*simPar.v_max);
+        set(h2,'Xdata',x);
+        h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo2');
+        set(h2,'Ydata',loglo2.*simPar.v_max);
+        set(h2,'Xdata',x);
+        h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo3');
+        set(h2,'Ydata',loglo3.*simPar.v_max);
         set(h2,'Xdata',x);
         h3 = findobj(get(gca,'Children'),'Tag','gaPlotlattice_ratio');
         set(h3,'String',strcat(['Lattice ratio: ' num2str(lattice_ratio)]));

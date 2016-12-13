@@ -142,7 +142,8 @@ classdef Agent < handle
             % y = (max(0,obj.v_max - obj.genome(2) * L_i_n)./obj.v_max).^2;
             nrNeighbours = length(nL);
             if nrNeighbours > 1
-                n_angles                = obj.smallAngle(atan2(-nDir(:,2),-nDir(:,1))) + 0.5 * pi() - obj.heading(1);
+                nDir = -nDir;
+                n_angles                = obj.smallAngle(atan2(nDir(:,2),nDir(:,1)) - obj.heading(1));
                 n_angles(n_angles<0)    = n_angles(n_angles<0) + 2 * pi();
                 nInd                    = n_angles < pi();
                 n_angles                = n_angles(nInd);
@@ -154,7 +155,7 @@ classdef Agent < handle
                     y = 1;
                 case 1
                     totA    = 1/2 * pi() * obj.cam_range^2;
-                    theta   = acos((obj.cam_range - (obj.cam_range-nL/2))/obj.cam_range);
+                    theta   = 2 * acos((obj.cam_range - (obj.cam_range-nL/2))/obj.cam_range);
                     dA      = obj.cam_range^2/2*(theta - sin(theta));
                     y       = (totA - dA)/totA;
                 otherwise
