@@ -105,7 +105,12 @@ switch flag
         y = tmp_agent.getAgentFunction(x);
         h = plot(x,y);
         set(h,'Tag','gaPlotAgentFunction');
-        h2 = plot(x,tmp_agent.loglo_int(abs(y)).*simPar.v_max,'--','Color','red');
+        tmp_agent.heading = [0 0];
+        loglo = zeros(length(x),1);
+        for pl=1:length(x)
+            loglo(pl) = tmp_agent.loglo_int([0 1],x(pl));
+        end
+        h2 = plot(x,loglo.*simPar.v_max,'--','Color','red');
         set(h2,'Tag','gaPlotAgentFunctionLoGlo');
         h3 = text(0.3,0.1*simPar.v_max,strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
         set(h3,'Tag','gaPlotlattice_ratio');
@@ -146,7 +151,12 @@ switch flag
         set(h,'Ydata',y);
         set(h,'Xdata',x);
         h2 = findobj(get(gca,'Children'),'Tag','gaPlotAgentFunctionLoGlo');
-        set(h2,'Ydata',tmp_agent.loglo_int(abs(y)).*simPar.v_max);
+        tmp_agent.heading = [0 0];
+        loglo = zeros(length(x),1);
+        for pl=1:length(x)
+            loglo(pl) = tmp_agent.loglo_int([0 1],x(pl));
+        end
+        set(h2,'Ydata',loglo.*simPar.v_max);
         set(h2,'Xdata',x);
         h3 = findobj(get(gca,'Children'),'Tag','gaPlotlattice_ratio');
         set(h3,'String',strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
