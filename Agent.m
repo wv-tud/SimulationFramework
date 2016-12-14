@@ -118,10 +118,10 @@ classdef Agent < handle
                 nDir    = q_ij ./ max(0.01, nMag);
                 nL_i    = obj.local_interaction(nMag')';
                 L_i     = sum(nL_i .* nDir,1)./length(nL_i);   % Average over nr. of agents
-                u_d     = L_i + obj.loglo_int(nDir,nMag) * g_i;
+                u_d     = L_i + obj.loglo_int(nMag,nDir,g_i) * g_i;
             else
                 L_i     = [0 0 0];
-                u_d     = obj.loglo_int([],[]) * g_i;
+                u_d     = g_i;
             end
             u_d_n   = sqrt(u_d(1)^2 + u_d(2)^2); % + u_d(3)^2);
             if u_d_n > obj.v_max
@@ -136,11 +136,34 @@ classdef Agent < handle
             y       = x;
         end
         
-        function y = loglo_int(obj, nDir, nL)
+        function y = loglo_int(obj, nMag, nDir, g_i)
             % Returns a 0-1 scalar of how much of g_i is taken into account
             % dependant on the size of L_i
-            % y = (max(0,obj.v_max - obj.genome(2) * L_i_n)./obj.v_max).^2;
-            nrNeighbours = length(nL);
+            %y=1;
+            w_neighbours    = norm(g_i) * sum((((obj.cam_range - nMag)/(obj.cam_range - (obj.seperation_range + obj.collision_range))).^2 .* nDir),1)./length(nMag);
+            % Find component along g_i
+            cg_i            = dot(w_neighbours,g_i)/dot(g_i,g_i)*g_i;
+            y               = min(1,max(0, (1.5 - norm(g_i - cg_i)/norm(2*g_i))))^(2*obj.genome(2));   
+%             figure(5);
+%             cla
+%             hold all;
+%             quiver(0,0,g_i(1),g_i(2),'--','DisplayName','g_i')
+%             quiver(zeros(length(nMag),1),zeros(length(nMag),1),nMag .* nDir(:,1),nMag .* nDir(:,2),'--')
+%             quiver(0,0,w_neighbours(1), w_neighbours(2),'--','DisplayName','w_neighbours')
+%             quiver(0,0,cg_i(1), cg_i(2),'--','DisplayName','cg_i')
+%             quiver(0,0,y*g_i(1),y*g_i(2),'DisplayName','final g_i');
+%             viscircles([0 0],obj.cam_range,'LineWidth',1,'LineStyle','--','Color','black');
+%             legend('show');
+%             axis equal;
+%             set(gca,'XMinorGrid','on')
+%             set(gca,'YMinorGrid','on')
+%             pause
+            return;
+            y = (max(0,obj.v_max - obj.genome(2) * sqrt(mean((obj.cam_range-nL).^2)))./obj.v_max).^2;
+            return;
+             nrNeighbours = length(nL);
+%             y = (1- sum(max(0,(obj.cam_range - nL)).^(nrNeighbours*obj.genome(2)))/(nrNeighbours*obj.cam_range^2));
+%             y = max(0,min(1,y));
             if nrNeighbours > 1
                 nDir = -nDir;
                 n_angles                = obj.smallAngle(atan2(nDir(:,2),nDir(:,1)) - obj.heading(1));
@@ -154,12 +177,14 @@ classdef Agent < handle
                 case 0
                     y = 1;
                 case 1
-                    totA    = 1/2 * pi() * obj.cam_range^2;
-                    theta   = 2 * acos((obj.cam_range - (obj.cam_range-nL/2))/obj.cam_range);
-                    dA      = obj.cam_range^2/2*(theta - sin(theta));
-                    y       = (totA - dA)/totA;
+                    totA    = 1/2 * pi() * (obj.cam_range)^2;
+                    theta   = 2 * acos(((obj.cam_range) - (obj.cam_range-nL/2))/(obj.cam_range));
+                    if ~isreal(theta)
+                        theta = 0;
+                    end
+                    dA      = (obj.cam_range)^2/2*(theta - sin(theta));
+                    y       = max(0,min(1,(totA - dA)/totA));
                 otherwise
-                    
                     [n_sAngles,sI]  = sort(n_angles);
                     n_sDist         = nL(sI);
                     tri_angles      = diff(n_sAngles);
@@ -167,7 +192,7 @@ classdef Agent < handle
                     dA              = 0;
                     if tri_angles(1) > 1/2 * pi()
                         tri_angles(1)   = tri_angles(1) - 1/2 * pi();
-                        dA              = dA + 1/2 * 1/2 * pi() * obj.cam_range^2;
+                        dA              = dA + 1/2 * 1/2 * pi() * (obj.cam_range)^2;
                     end
                     dA  = dA + 1/2 * (n_sDist(1)/2)^2 * tan(tri_angles(1));
                     for i=2:length(n_angles)
@@ -176,13 +201,14 @@ classdef Agent < handle
                     end
                     if tri_angles(end) > 1/2 * pi()
                         tri_angles(end) = tri_angles(end) - 1/2 * pi();
-                        dA              = dA + 1/2 * 1/2 * pi() * obj.cam_range^2;
+                        dA              = dA + 1/2 * 1/2 * pi() * (obj.cam_range)^2;
                     end
                     dA      = dA + 1/2 * (n_sDist(end)/2)^2 * tan(tri_angles(end));
-                    totA    = 1/2 * pi() * obj.cam_range^2;
-                    y       = dA / totA;
+                    totA    = 1/4 * pi() * (obj.cam_range)^2;
+                    %totA    = nrNeighbours /4 * obj.cam_range^2 * tan(pi()/(2* nrNeighbours));
+                    y       = max(0,min(1,dA / totA));
             end
-            y = y^obj.genome(2);
+           y = y^obj.genome(2);
         end
         
         function X = getAgentFunction(obj,x)

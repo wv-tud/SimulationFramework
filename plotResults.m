@@ -110,9 +110,9 @@ switch flag
         loglo2 = zeros(length(x),1);
         loglo3 = zeros(length(x),1);
         for pl=1:length(x)
-            loglo(pl) = tmp_agent.loglo_int(-[0 1],x(pl));
-            loglo2(pl) = tmp_agent.loglo_int(-[cos(1/3*pi()) sin(1/3*pi()); cos(2/3*pi()) sin(2/3*pi())],[x(pl); x(pl)]);
-            loglo3(pl) = tmp_agent.loglo_int(-[cos(1/4*pi()) sin(1/4*pi()); cos(2/4*pi()) sin(2/4*pi()); cos(3/4*pi()) sin(3/4*pi())],[x(pl); x(pl); x(pl)]);
+            loglo(pl) = tmp_agent.loglo_int(x(pl),-[0 1 0],[0 simPar.v_max 0]);
+            loglo2(pl) = tmp_agent.loglo_int([x(pl); x(pl)],-[cos(1/3*pi()) sin(1/3*pi()) 0; cos(2/3*pi()) sin(2/3*pi()) 0],[0 simPar.v_max 0]);
+            loglo3(pl) = tmp_agent.loglo_int([x(pl); x(pl); x(pl)],-[cos(1/4*pi()) sin(1/4*pi()) 0; cos(2/4*pi()) sin(2/4*pi()) 0; cos(3/4*pi()) sin(3/4*pi()) 0],[0 simPar.v_max 0]);
         end
         h2 = plot(x,loglo.*simPar.v_max,'--','Color','red');
         set(h2,'Tag','gaPlotAgentFunctionLoGlo');
@@ -164,9 +164,9 @@ switch flag
         loglo2 = zeros(length(x),1);
         loglo3 = zeros(length(x),1);
         for pl=1:length(x)
-            loglo(pl) = tmp_agent.loglo_int(-[0 1],x(pl));
-            loglo2(pl) = tmp_agent.loglo_int(-[cos(1/3*pi()) sin(1/3*pi()); cos(2/3*pi()) sin(2/3*pi())],[x(pl); x(pl)]);
-            loglo3(pl) = tmp_agent.loglo_int(-[cos(1/4*pi()) sin(1/4*pi()); cos(2/4*pi()) sin(2/4*pi()); cos(3/4*pi()) sin(3/4*pi())],[x(pl); x(pl); x(pl)]);
+            loglo(pl) = tmp_agent.loglo_int(x(pl),-[0 1 0],[0 simPar.v_max 0]);
+            loglo2(pl) = tmp_agent.loglo_int([x(pl); x(pl)],-[cos(1/3*pi()) sin(1/3*pi()) 0; cos(2/3*pi()) sin(2/3*pi()) 0],[0 simPar.v_max 0]);
+            loglo3(pl) = tmp_agent.loglo_int([x(pl); x(pl); x(pl)],-[cos(1/4*pi()) sin(1/4*pi()) 0; cos(2/4*pi()) sin(2/4*pi()) 0; cos(3/4*pi()) sin(3/4*pi()) 0],[0 simPar.v_max 0]);
         end
         set(h2,'Ydata',loglo.*simPar.v_max);
         set(h2,'Xdata',x);
