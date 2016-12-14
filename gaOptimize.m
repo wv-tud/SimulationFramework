@@ -5,8 +5,8 @@ acc_sat_warning = false;
 % Set general simulation parameters
 simPar = struct(...
     'type',                 '',...
-    'simTime',              20, ...
-    'trialSize',            1, ...
+    'simTime',              30, ...
+    'trialSize',            3, ...
     'fps',                  15, ...
     'nAgents',              0, ...  % Pinciroli agents
     'polyAgents',           0, ...  % Polynomial agents
@@ -37,7 +37,7 @@ i                       = 1;
 simulations{i}          = struct();
 simulations{i}.popSize  = 100;
 simulations{i}.type     = 'simpleNN';
-simulations{i}.nnSize   = 10;
+simulations{i}.nnSize   = 25;
 switch(length(simulations{i}.nnSize))
     case 1
         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
@@ -52,13 +52,13 @@ switch(length(simulations{i}.nnSize))
         IW = OB(end)+1:(OB(end) + simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2));
         LW = IW(end)+1:simulations{i}.genomeNetLength;
 end
-simulations{i}.LB       = [0     0 -5 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.UB       = [0.25  5  5 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.LB(IB+2) = -20;
-simulations{i}.UB(IB+2) =  20;
+simulations{i}.LB       = [0     0 -1.5 * ones(1, simulations{i}.genomeNetLength)];
+simulations{i}.UB       = [0.25  5  1.5 * ones(1, simulations{i}.genomeNetLength)];
+simulations{i}.LB(IB+2) = -10;
+simulations{i}.UB(IB+2) =  10;
 simulations{i}.LB(OB+2) = -4;
 simulations{i}.UB(OB+2) =  6;
-simulations{i}.field    = two_buck_circ;
+simulations{i}.field    = buck;
 i = i + 1;
 % % NN optimization (two bucket circ)
 % simulations{i}          = simulations{i-1};
@@ -238,7 +238,7 @@ for si = 1:length(simulations)
         'MaxStallGenerations', 50,...
         'MaxGenerations', 200,...
         'PopulationSize',simulations{si}.popSize, ...
-        ...%'FitnessScalingFcn', {@fitscalingprop}, ...
+        'FitnessScalingFcn', {@fitscalingprop}, ...
         'Display','iter', ...
         'PlotFcn',@(options,state,flag) plotResults(simPar, options, state, flag, 'ga'),...
         'UseParallel',true,...
@@ -252,9 +252,23 @@ for si = 1:length(simulations)
     noMouseActions  = true;
     min_lattice     = ((2 * simPar.v_max)^2/(2 * 6) + simPar.collision_range)/(simPar.seperation_range + simPar.collision_range);
     max_lattice     = 2;
+    orig_time                           = simPar.simTime;%58.4
+    orig_generations                    = gaOptions.MaxGenerations;
+    orig_trialSize                      = simPar.trialSize;
+    orig_hybridFcn                      = gaOptions.HybridFcn;
+    simPar.simTime                      = 10;
+    simPar.trialSize                    = 1;
+    gaOptions.MaxGenerations            = 50;
+    gaOptions.HybridFcn                 = {};
+    [prelim_x,prelim_fval,prelim_exitflag,prelim_output,prelim_pop,prelim_scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
+    gaOptions.InitialPopulationMatrix   = prelim_pop;
+    gaOptions.MaxGenerations            = orig_generations;
+    simPar.simTime                      = orig_time;
+    simPar.trialSize                    = orig_trialSize;
+    gaOptions.HybridFcn                 = orig_hybridFcn;
     [x,fval,exitflag,output,population,scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
     %% save genome to file
-    save(strcat(['./data/ga-' simulations{si}.type '-' simulations{si}.field(1).type '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores','simPar');
+    save(strcat(['./data/ga-' simulations{si}.type '-' simulations{si}.field(1).name '-' num2str(simPar.simTime) 's-' num2str(scores(1)) '.mat']),'x','fval','exitflag','output','population','scores','simPar');
     %% Genetic optimization finished, sim the winner and make video
     x_store{si}         = x;
     simPar_store{si}    = simPar;
