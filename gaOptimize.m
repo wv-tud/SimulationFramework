@@ -12,14 +12,14 @@ simPar = struct(...
     'polyAgents',           0, ...  % Polynomial agents
     'nnAgents',             0, ...  % Simple neural network agets
     'sinusoidAgents',       0, ...  % Sinusoid agents
-    'seperation_range',     2.2, ...
+    'seperation_range',     2.5, ...
     'collision_range',      0.3, ...
     'camera_range',         4.1, ...
     'init',                 'random', ...
     'size',                 [10 10], ...
     'v_max',                3.5, ...
-    'distance_cost',        100, ...
-    'velocity_cost',        0.125, ...
+    'distance_cost',        10, ...
+    'velocity_cost',        1, ...
     'collision_cost',       1e8, ...
     'seperation_cost',      100, ...
     'nnSize',               10, ...
@@ -33,33 +33,33 @@ load_global_fields;
 simPar.mission          = {'cyberzooBucket'};
 simulations             = {};
 i                       = 1;
-% NN optimization (two buck circ)
-simulations{i}          = struct();
-simulations{i}.popSize  = 100;
-simulations{i}.type     = 'simpleNN';
-simulations{i}.nnSize   = 25;
-switch(length(simulations{i}.nnSize))
-    case 1
-        simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
-        IB = 1:simulations{i}.nnSize;
-        OB = IB(end)+1;
-        IW = OB(end)+1:OB(end)+simulations{i}.nnSize;
-        LW = IW(end)+1:simulations{i}.genomeNetLength;
-    case 2
-        simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
-        IB = 1:(simulations{i}.nnSize(1) + simulations{i}.nnSize(2));
-        OB = IB(end)+1;
-        IW = OB(end)+1:(OB(end) + simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2));
-        LW = IW(end)+1:simulations{i}.genomeNetLength;
-end
-simulations{i}.LB       = [0     0 -1.5 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.UB       = [0.25  5  1.5 * ones(1, simulations{i}.genomeNetLength)];
-simulations{i}.LB(IB+2) = -10;
-simulations{i}.UB(IB+2) =  10;
-simulations{i}.LB(OB+2) = -4;
-simulations{i}.UB(OB+2) =  6;
-simulations{i}.field    = buck;
-i = i + 1;
+% % NN optimization (two buck circ)
+% simulations{i}          = struct();
+% simulations{i}.popSize  = 100;
+% simulations{i}.type     = 'simpleNN';
+% simulations{i}.nnSize   = 25;
+% switch(length(simulations{i}.nnSize))
+%     case 1
+%         simulations{i}.genomeNetLength = 3 * simulations{i}.nnSize + 1;
+%         IB = 1:simulations{i}.nnSize;
+%         OB = IB(end)+1;
+%         IW = OB(end)+1:OB(end)+simulations{i}.nnSize;
+%         LW = IW(end)+1:simulations{i}.genomeNetLength;
+%     case 2
+%         simulations{i}.genomeNetLength = simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2) + simulations{i}.nnSize(2) + simulations{i}.nnSize(1) + simulations{i}.nnSize(2) + 1;
+%         IB = 1:(simulations{i}.nnSize(1) + simulations{i}.nnSize(2));
+%         OB = IB(end)+1;
+%         IW = OB(end)+1:(OB(end) + simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2));
+%         LW = IW(end)+1:simulations{i}.genomeNetLength;
+% end
+% simulations{i}.LB       = [0     0 -1.5 * ones(1, simulations{i}.genomeNetLength)];
+% simulations{i}.UB       = [0.25  5  1.5 * ones(1, simulations{i}.genomeNetLength)];
+% simulations{i}.LB(IB+2) = -10;
+% simulations{i}.UB(IB+2) =  10;
+% simulations{i}.LB(OB+2) = -4;
+% simulations{i}.UB(OB+2) =  6;
+% simulations{i}.field    = buck;
+% i = i + 1;
 % % NN optimization (two bucket circ)
 % simulations{i}          = simulations{i-1};
 % simulations{i}.field    = two_buck_circ;
@@ -77,13 +77,13 @@ i = i + 1;
 % simulations{i}.field    = buck;
 % i = i + 1;
 % 
-% % Pinciroli optimization (two buck circ)
-% simulations{i}          = struct();
-% simulations{i}.popSize  = 75;
-% simulations{i}.type     = 'pinciroli';
-% simulations{i}.LB       = zeros(1,3);
-% simulations{i}.UB       = [0.5 10 0.5];
-% simulations{i}.field    = two_point_circ;
+% Pinciroli optimization (two buck circ)
+simulations{i}          = struct();
+simulations{i}.popSize  = 75;
+simulations{i}.type     = 'pinciroli';
+simulations{i}.LB       = zeros(1,3);
+simulations{i}.UB       = [0.25 10 0.5];
+simulations{i}.field    = buck;
 i = i + 1;
 % % Pinciroli optimization (two circ)
 % simulations{i}          = simulations{i-1};
@@ -182,8 +182,8 @@ for si = 1:length(simulations)
             simPar.net.i_LW         = LW;
     end
     %% Check lattice ratio (also checked inside sim_calc_cost but throws warnings)
-    if ~lat_warning && simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>=2
-        simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
+    if ~lat_warning && simPar.camera_range/(simPar.seperation_range)>=2
+        simPar.camera_range = 1.95 * (simPar.seperation_range);
         fprintf('WARNING: lattice ratio >= 2, limiting camera range to %.2fm\n', simPar.camera_range);
         lat_warning = true;
     end
@@ -243,22 +243,33 @@ for si = 1:length(simulations)
         'PlotFcn',@(options,state,flag) plotResults(simPar, options, state, flag, 'ga'),...
         'UseParallel',true,...
         ...%'OutputFcn',@gaOutputFun,...
-        'CrossoverFcn',{@crossoverheuristic,1.8}, ... % @crossoverintermediate
+        ...%'CrossoverFcn',{@crossoverheuristic,20}, ... % @crossoverintermediate
         'CrossoverFraction',0.8,...
-        'SelectionFcn', {@selectiontournament,8}, ...
+        'SelectionFcn', {@selectiontournament,16}, ...
         'HybridFcn',{@patternsearch,psOptions}...
         );
+    switch simulations{si}.type
+        case 'pinciroli'
+            %gaOptions.CrossoverFcn          = {@crossoverheuristic};
+            gaOptions.FitnessScalingFcn     = {@fitscalingrank};
+        case 'polynomial'
+            
+        case 'sinusoid'
+            
+        case 'simpleNN'
+            gaOptions.FitnessScalingFcn     = {@fitscalingprop};
+    end
     alt_gads        = true;
     noMouseActions  = true;
-    min_lattice     = ((2 * simPar.v_max)^2/(2 * 6) + simPar.collision_range)/(simPar.seperation_range + simPar.collision_range);
+    min_lattice     = ((2 * simPar.v_max)^2/(2 * 6) + simPar.collision_range)/(simPar.seperation_range);
     max_lattice     = 2;
     orig_time                           = simPar.simTime;%58.4
     orig_generations                    = gaOptions.MaxGenerations;
     orig_trialSize                      = simPar.trialSize;
     orig_hybridFcn                      = gaOptions.HybridFcn;
     simPar.simTime                      = 10;
-    simPar.trialSize                    = 1;
-    gaOptions.MaxGenerations            = 50;
+    simPar.trialSize                    = 3;
+    gaOptions.MaxGenerations            = 25;
     gaOptions.HybridFcn                 = {};
     [prelim_x,prelim_fval,prelim_exitflag,prelim_output,prelim_pop,prelim_scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
     gaOptions.InitialPopulationMatrix   = prelim_pop;

@@ -38,7 +38,7 @@ switch optimType
         curBestScore    = options.fval;
         curGen          = options.iteration;
 end
-simPar.camera_range     = (simPar.seperation_range + simPar.collision_range) * lattice_ratio;
+simPar.camera_range     = (simPar.seperation_range) * lattice_ratio;
 switch(agentType)
     case 'pinciroli'
         tmp_agent = Agent_pinciroli(Mission(simPar.mission{1}),0,[0 0 0],[0 0]);
@@ -97,7 +97,7 @@ switch flag
         subplot(2,2,[3 4]);
         hold on;
         axis tight;
-        sigma = tmp_agent.seperation_range+tmp_agent.collision_range;
+        sigma = tmp_agent.seperation_range;
         plot([x(1) 2*sigma],[simPar.v_max simPar.v_max],'--','Color','black');
         plot([x(1) 2*sigma],[-simPar.v_max -simPar.v_max],'--','Color','black');
         plot([sigma sigma],[-simPar.v_max simPar.v_max],'--','Color','black');
@@ -124,6 +124,8 @@ switch flag
         set(h3,'Tag','gaPlotlattice_ratio');
         h4 = text(0.3,0.2*simPar.v_max,strcat(['Viscosity: ' num2str(genome(1)*100) '%']));
         set(h4,'Tag','gaPlotviscosity');
+        h5 = text(0.3,0.3*simPar.v_max,strcat(['Local-global: ' num2str(genome(2))]));
+        set(h5,'Tag','gaPlotloglo');
         grid minor;
         set(gca,'xlim',[0, tmp_agent.cam_range])
         set(gca,'ylim',[min(0,max(1.1*min(y),-1.1 * simPar.v_max)), 1.1 * simPar.v_max])
@@ -148,7 +150,7 @@ switch flag
             set(get(gca,'Title'),'String',sprintf('Best: %g',curBestScore));
         end
         set(gca,'xlim',[0,max(1,curGen)]);
-        set(gca,'ylim',[max(0,min(curBestScore-0.1,curBestScore-std(bestCol(max(1,end-20):end)))),max(curBestScore+0.1,curBestScore+std(bestCol(max(1,end-20):end)))]);
+        set(gca,'ylim',[max(0,curBestScore*0.95),max(curBestScore+0.1,curBestScore+std(bestCol(max(1,end-20):end)))]);
         %% Plot agent function
         subplot(2,2,[3 4]);
         y = tmp_agent.getAgentFunction(x);
@@ -180,6 +182,8 @@ switch flag
         set(h3,'String',strcat(['Lattice ratio: ' num2str(lattice_ratio)]));
         h4 = findobj(get(gca,'Children'),'Tag','gaPlotviscosity');
         set(h4,'String',strcat(['Viscosity: ' num2str(genome(1)*100) '%']));
+        h5 = findobj(get(gca,'Children'),'Tag','gaPlotloglo');
+        set(h5,'String',strcat(['Local-global: ' num2str(genome(2))]));
     case 'done'
         hold off
         %% Plot best score

@@ -33,7 +33,7 @@ hold on;
 plot(x,y);
 plot([0 max(x)],[uArena_store{i}.agents{1}.v_max uArena_store{i}.agents{1}.v_max],'--','Color','black');
 plot([0 max(x)],[0 0],'--','Color','black');
-sigma = uArena_store{i}.agents{1}.seperation_range + uArena_store{i}.agents{1}.collision_range;
+sigma = uArena_store{i}.agents{1}.seperation_range;
 plot([sigma sigma],[-0.5*uArena_store{i}.agents{1}.v_max 1.5*uArena_store{i}.agents{1}.v_max],'--','Color','red');
 grid minor;
 hold off;

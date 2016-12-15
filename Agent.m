@@ -140,10 +140,11 @@ classdef Agent < handle
             % Returns a 0-1 scalar of how much of g_i is taken into account
             % dependant on the size of L_i
             %y=1;
-            w_neighbours    = norm(g_i) * sum((((obj.cam_range - nMag)/(obj.cam_range - (obj.seperation_range + obj.collision_range))).^2 .* nDir),1)./length(nMag);
+            rel_dist        = min(1,(obj.cam_range - nMag)/(obj.cam_range - obj.seperation_range));
+            w_neighbours    = norm(g_i) * sum(rel_dist.^2 .* nDir,1)/length(nMag);
             % Find component along g_i
             cg_i            = dot(w_neighbours,g_i)/dot(g_i,g_i)*g_i;
-            y               = min(1,max(0, (1.5 - norm(g_i - cg_i)/norm(2*g_i))))^(2*obj.genome(2));   
+            y               = min(1,max(0, (1.0 - (norm(g_i - cg_i)-norm(g_i))/norm(g_i))))^(2*obj.genome(2));   
 %             figure(5);
 %             cla
 %             hold all;
@@ -158,6 +159,7 @@ classdef Agent < handle
 %             set(gca,'XMinorGrid','on')
 %             set(gca,'YMinorGrid','on')
 %             pause
+%             close 5;
             return;
             y = (max(0,obj.v_max - obj.genome(2) * sqrt(mean((obj.cam_range-nL).^2)))./obj.v_max).^2;
             return;

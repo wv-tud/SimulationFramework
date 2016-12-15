@@ -88,7 +88,7 @@ classdef Mission < Arena
                 case 'swirl'
 %                     tmp_agent       = Agent_pinciroli(obj,0,[0 0 0],[0 0]);      % Create tmp agent to read properties
 %                     tmp_agent       = obj.mergeStruct(tmp_agent,obj.agent_conf);
-%                     %a               = tmp_agent.v_max*obj.dt/(((obj.nAgents*(tmp_agent.collision_range+tmp_agent.seperation_range)^2*sqrt(3)/2)/pi()));
+%                     %a               = tmp_agent.v_max*obj.dt/(((obj.nAgents*(tmp_agent.seperation_range)^2*sqrt(3)/2)/pi()));
                     %obj.agent_conf  = struct('g_fun',@(varargin)  min(a*(norm(varargin{2})).^2,varargin{3}).*varargin{2}./norm(varargin{2}).*[-10 -10 0]*[cos((1/(1+0.02*norm(varargin{2})))*0.5*pi()) -sin((1/(1+0.02*norm(varargin{2})))*0.5*pi()) 0; sin((1/(1+0.02*norm(varargin{2})))*0.5*pi()) cos((1/(1+0.02*norm(varargin{2})))*0.5*pi()) 0; 0 0 1]);
                     %clear tmp_agent;
                 case 'waypoint'

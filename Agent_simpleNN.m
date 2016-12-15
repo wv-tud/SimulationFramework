@@ -12,7 +12,7 @@ classdef Agent_simpleNN < Agent
         end
 
         function y = nnNormI(obj,x)
-            y = (x - obj.collision_range + obj.seperation_range)./(obj.collision_range + obj.seperation_range);
+            y = (x - obj.seperation_range)./(obj.seperation_range);
         end
         
         function y = local_interaction(obj,x)

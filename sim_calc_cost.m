@@ -6,7 +6,7 @@ distanceCost    = 0;
 collisionCost   = 0;
 seperationCost  = 0;
 velocityCost    = 0;
-simPar.camera_range     = (simPar.seperation_range + simPar.collision_range) * genome(1);
+simPar.camera_range     = (simPar.seperation_range) * genome(1);
 genome(1)               = [];
 for s=1:simPar.trialSize
     % Simulation options
@@ -35,8 +35,8 @@ for s=1:simPar.trialSize
     uArena.sinusoidAgents       = simPar.sinusoidAgents;
     uArena.field                = simPar.field;
     % Simulation dependant options
-    if simPar.camera_range/(simPar.seperation_range + simPar.collision_range)>2
-        simPar.camera_range = 1.95 * (simPar.seperation_range + simPar.collision_range);
+    if simPar.camera_range/(simPar.seperation_range)>2
+        simPar.camera_range = 1.95 * (simPar.seperation_range);
         fprintf('WARNING: lattice ratio > 2, limiting camera range to %9.2f\n', simPar.camera_range);
     end
     switch(simPar.type)

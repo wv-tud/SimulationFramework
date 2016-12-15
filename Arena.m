@@ -51,7 +51,7 @@ classdef Arena < handle
         end
         
         function Simulate(obj,varargin)
-            obj.circle_packing_radius = sqrt((obj.nAgents*(obj.agent_conf.seperation_range+obj.agent_conf.collision_range)^2*sqrt(3)/2)/pi());
+            obj.circle_packing_radius = sqrt((obj.nAgents*(obj.agent_conf.seperation_range)^2*sqrt(3)/2)/pi());
             nT                  = obj.T/obj.dt; % Number of timestep iterations
             % Preallocate arrays
             obj.collisions      = zeros(nT,obj.nAgents);
@@ -95,7 +95,7 @@ classdef Arena < handle
                 if obj.t > 0
                     tmp_cost        = 0;
                     tmp_sep_cost    = 0;
-                    sigma           = (obj.agents{1}.collision_range + obj.agents{1}.seperation_range);
+                    sigma           = (obj.agents{1}.seperation_range);
                     dCostIndices    = dAbs < obj.agents{1}.cam_range;
                     for i=1:obj.nAgents
                         dCostMat        = dAbs(i,dCostIndices(i,:));
@@ -199,7 +199,7 @@ classdef Arena < handle
                 tries = 0;
                 while collisionFree == 0
                     [~,dAbs]    = obj.detectNeighbours(1);
-                    [i,~]       = find(dAbs<(obj.agents{1}.collision_range+k*obj.agents{1}.seperation_range));
+                    [i,~]       = find(dAbs<(k*obj.agents{1}.seperation_range));
                     if isempty(i)
                         collisionFree  = 1;
                         continue;
