@@ -52,12 +52,16 @@ i                       = 1;
 %         IW = OB(end)+1:(OB(end) + simulations{i}.nnSize(1) + simulations{i}.nnSize(1) * simulations{i}.nnSize(2));
 %         LW = IW(end)+1:simulations{i}.genomeNetLength;
 % end
-% simulations{i}.LB       = [0     0 -1.5 * ones(1, simulations{i}.genomeNetLength)];
-% simulations{i}.UB       = [0.25  5  1.5 * ones(1, simulations{i}.genomeNetLength)];
-% simulations{i}.LB(IB+2) = -10;
-% simulations{i}.UB(IB+2) =  10;
-% simulations{i}.LB(OB+2) = -4;
-% simulations{i}.UB(OB+2) =  6;
+% simulations{i}.LB       = [0     0  ones(1, simulations{i}.genomeNetLength)];
+% simulations{i}.UB       = [0.25  5  ones(1, simulations{i}.genomeNetLength)];
+% simulations{i}.LB(IW+2) = -5;
+% simulations{i}.UB(IW+2) =  5;
+% simulations{i}.LB(LW+2) = -10;
+% simulations{i}.UB(LW+2) =  10;
+% simulations{i}.LB(IB+2) = -7.5;
+% simulations{i}.UB(IB+2) =  7.5;
+% simulations{i}.LB(OB+2) = -15;
+% simulations{i}.UB(OB+2) =  15;
 % simulations{i}.field    = buck;
 % i = i + 1;
 % % NN optimization (two bucket circ)
