@@ -249,6 +249,11 @@ for si = 1:length(simulations)
         'ConstraintTolerance',  1e-2,...
         'UseParallel',          true ...
         );
+    prelim_run      = false;
+    alt_gads        = true;
+    noMouseActions  = true;
+    min_lattice     = ((2 * simPar.v_max)^2/(2 * 6) + simPar.collision_range)/(simPar.seperation_range);
+    max_lattice     = 2;
     switch simulations{si}.type
         case 'pinciroli'
             %gaOptions.CrossoverFcn          = {@crossoverheuristic};
@@ -258,26 +263,33 @@ for si = 1:length(simulations)
         case 'sinusoid'
             
         case 'simpleNN'
-            gaOptions.FitnessScalingFcn     = {@fitscalingprop};
+            gaOptions.FitnessScalingFcn = {@fitscalingprop};
+            prelim_run                  = true;
+            netInit                     = 5 * ones(1, simulations{si}.genomeNetLength);
+            netInit(IW)                 = 2.5;
+            netInit(LW)                 = 5;
+            netInit(IB)                 = 3.75;
+            netInit(OB)                 = 7.5;
+            gaOptions.InitialPopulationRange = ...
+                [ min_lattice 0    0 -netInit; ...
+                  max_lattice 0.25 5  netInit  ];
     end
-    alt_gads        = true;
-    noMouseActions  = true;
-    min_lattice     = ((2 * simPar.v_max)^2/(2 * 6) + simPar.collision_range)/(simPar.seperation_range);
-    max_lattice     = 2;
     %% Run a shorter GA to populate 50% of the final GA population with feasable candiates
-    orig_time                           = simPar.simTime;
-    orig_generations                    = gaOptions.MaxGenerations;
-    orig_trialSize                      = simPar.trialSize;
-    simPar.simTime                      = 5;
-    simPar.trialSize                    = 3;
-    gaOptions.MaxGenerations            = 25;
-    [prelim_x,prelim_fval,prelim_exitflag,prelim_output,prelim_pop,prelim_scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
+    if prelim_run
+        orig_time                           = simPar.simTime;
+        orig_generations                    = gaOptions.MaxGenerations;
+        orig_trialSize                      = simPar.trialSize;
+        simPar.simTime                      = 5;
+        simPar.trialSize                    = 3;
+        gaOptions.MaxGenerations            = 25;
+        [prelim_x,prelim_fval,prelim_exitflag,prelim_output,prelim_pop,prelim_scores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
+        [~,pI] = sort(prelim_scores);
+        gaOptions.InitialPopulationMatrix   = prelim_pop(pI(1:ceil(end/2)),:);
+        gaOptions.MaxGenerations            = orig_generations;
+        simPar.simTime                      = orig_time;
+        simPar.trialSize                    = orig_trialSize;
+    end
     %% Run the main GA
-    [~,pI] = sort(prelim_scores);
-    gaOptions.InitialPopulationMatrix   = prelim_pop(pI(1:ceil(end/2)),:);
-    gaOptions.MaxGenerations            = orig_generations;
-    simPar.simTime                      = orig_time;
-    simPar.trialSize                    = orig_trialSize;
     [gaX,gaFval,gaExitflag,gaOutput,gaPopulation,gaScores] = ga(@(x) sim_calc_cost(simPar, x, false), length(simulations{si}.LB)+1,[],[],[],[],[min_lattice simulations{si}.LB],[max_lattice simulations{si}.UB],[],gaOptions);
     %% Run a patternsearch
     [~,I] = sort(gaScores);
