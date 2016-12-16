@@ -141,10 +141,11 @@ classdef Agent < handle
             % dependant on the size of L_i
             %y=1;
             rel_dist        = min(1,(obj.cam_range - nMag)/(obj.cam_range - obj.seperation_range));
-            w_neighbours    = norm(g_i) * sum(rel_dist.^2 .* nDir,1)/length(nMag);
+            w_neighbours    = norm(g_i) * sum(rel_dist.^2 .* nDir,1);
             % Find component along g_i
             cg_i            = dot(w_neighbours,g_i)/dot(g_i,g_i)*g_i;
-            y               = min(1,max(0, (1.0 - (norm(g_i - cg_i)-norm(g_i))/norm(g_i))))^(2*obj.genome(2));   
+            %y               = min(1,max(0, (2.0 - (norm(g_i - cg_i))/norm(g_i))))^(2*obj.genome(2));   
+            y               = min(1,max(0, (2.0 - sqrt((g_i(1) - cg_i(1))^2 + (g_i(2) - cg_i(2))^2)/sqrt(g_i(1)^2 + g_i(2)^2))))^(obj.genome(2));  
 %             figure(5);
 %             cla
 %             hold all;

@@ -37,6 +37,13 @@ switch optimType
         genome(1)       = [];
         curBestScore    = options.fval;
         curGen          = options.iteration;
+    case 'test'
+        figure();
+        genome          = options;
+        lattice_ratio  = genome(1);
+        genome(1)       = [];
+        curBestScore    = 0;
+        curGen          = 0;
 end
 simPar.camera_range     = (simPar.seperation_range) * lattice_ratio;
 switch(agentType)
